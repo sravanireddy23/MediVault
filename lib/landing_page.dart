@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'auth_screen.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
@@ -53,9 +54,8 @@ class _LandingPageState extends State<LandingPage> {
         curve: Curves.easeInOut,
       );
     } else {
-      // Navigate to main app / login screen
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Proceeding to Login...')),
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const AuthScreen()),
       );
     }
   }
@@ -365,4 +365,3 @@ class OnboardingData {
     required this.bulletPoints,
   });
 }
-
