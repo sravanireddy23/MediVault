@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'signup_page1.dart';
 import 'mobile_screen.dart';
+import 'emergency_info_screen.dart';
 
 class AuthScreen extends StatelessWidget {
   const AuthScreen({super.key});
@@ -178,8 +179,12 @@ class AuthScreen extends StatelessWidget {
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      // Navigate to Emergency Info screen (no login needed)
-                      // Navigator.push(context, MaterialPageRoute(builder: (_) => const EmergencyInfoScreen()));
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const EmergencyInfoScreen(),
+                        ),
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFD32F2F),
