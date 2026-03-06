@@ -43,10 +43,22 @@ class _SignUpPage2State extends State<SignUpPage2> {
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
+      // Pass ALL collected data to MobileScreen → OtpScreen → HomeDashboard
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => MobileScreen(userName: widget.name),
+          builder: (context) => MobileScreen(
+            userName: widget.name,
+            // ── Pass signup data through to HomeDashboard ──
+            age: widget.age,
+            bloodGroup: widget.bloodGroup,
+            allergies: _allergiesController.text.trim(),
+            conditions: _chronicController.text.trim(),
+            medications: _medicationsController.text.trim(),
+            surgeries: _surgeriesController.text.trim(),
+            emergencyContactName: _emergencyNameController.text.trim(),
+            emergencyContactPhone: _emergencyPhoneController.text.trim(),
+          ),
         ),
       );
     }
@@ -220,8 +232,7 @@ class _SignUpPage2State extends State<SignUpPage2> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Divider(
-                      color:
-                      const Color(0xFF1565C0).withValues(alpha: 0.3),
+                      color: const Color(0xFF1565C0).withValues(alpha: 0.3),
                     ),
                   ),
                 ],

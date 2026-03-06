@@ -1,13 +1,30 @@
 import 'package:flutter/material.dart';
+import 'home_dashboard.dart';
 
 class OtpScreen extends StatefulWidget {
   final String mobileNumber;
   final String? userName;
+  final String? age;
+  final String? bloodGroup;
+  final String? allergies;
+  final String? conditions;
+  final String? medications;
+  final String? surgeries;
+  final String? emergencyContactName;
+  final String? emergencyContactPhone;
 
   const OtpScreen({
     super.key,
     required this.mobileNumber,
     this.userName,
+    this.age,
+    this.bloodGroup,
+    this.allergies,
+    this.conditions,
+    this.medications,
+    this.surgeries,
+    this.emergencyContactName,
+    this.emergencyContactPhone,
   });
 
   @override
@@ -63,23 +80,30 @@ class _OtpScreenState extends State<OtpScreen> {
     final otp = _controllers.map((c) => c.text).join();
     if (otp.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter the complete 6-digit OTP')),
+        const SnackBar(
+            content: Text('Please enter the complete 6-digit OTP')),
       );
       return;
     }
-    // TODO: Verify OTP with backend / Firebase
-    // For now navigate to Home Dashboard
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('OTP Verified! Welcome to MediVault'),
-        backgroundColor: Color(0xFF1565C0),
+    // TODO: Verify OTP with Firebase
+    // Navigate to HomeDashboard with all signup data
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (context) => HomeDashboard(
+          userName: widget.userName ?? 'User',
+          bloodGroup: widget.bloodGroup ?? '—',
+          age: widget.age ?? '—',
+          allergies: widget.allergies ?? '',
+          conditions: widget.conditions ?? '',
+          medications: widget.medications ?? '',
+          surgeries: widget.surgeries ?? '',
+          emergencyContactName: widget.emergencyContactName ?? '',
+          emergencyContactPhone: widget.emergencyContactPhone ?? '',
+        ),
       ),
+          (route) => false,
     );
-    // Navigator.pushAndRemoveUntil(
-    //   context,
-    //   MaterialPageRoute(builder: (context) => const HomeScreen()),
-    //   (route) => false,
-    // );
   }
 
   @override
@@ -158,15 +182,15 @@ class _OtpScreenState extends State<OtpScreen> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(
-                          color:
-                          const Color(0xFF1565C0).withValues(alpha: 0.3),
+                          color: const Color(0xFF1565C0)
+                              .withValues(alpha: 0.3),
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(
-                          color:
-                          const Color(0xFF1565C0).withValues(alpha: 0.3),
+                          color: const Color(0xFF1565C0)
+                              .withValues(alpha: 0.3),
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(

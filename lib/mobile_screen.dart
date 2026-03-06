@@ -3,8 +3,27 @@ import 'otp_screen.dart';
 
 class MobileScreen extends StatefulWidget {
   final String? userName;
+  final String? age;
+  final String? bloodGroup;
+  final String? allergies;
+  final String? conditions;
+  final String? medications;
+  final String? surgeries;
+  final String? emergencyContactName;
+  final String? emergencyContactPhone;
 
-  const MobileScreen({super.key, this.userName});
+  const MobileScreen({
+    super.key,
+    this.userName,
+    this.age,
+    this.bloodGroup,
+    this.allergies,
+    this.conditions,
+    this.medications,
+    this.surgeries,
+    this.emergencyContactName,
+    this.emergencyContactPhone,
+  });
 
   @override
   State<MobileScreen> createState() => _MobileScreenState();
@@ -22,13 +41,20 @@ class _MobileScreenState extends State<MobileScreen> {
 
   void _sendOtp() {
     if (_formKey.currentState!.validate()) {
-      // TODO: Integrate real OTP service (Firebase / Twilio)
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => OtpScreen(
             mobileNumber: _mobileController.text.trim(),
             userName: widget.userName,
+            age: widget.age,
+            bloodGroup: widget.bloodGroup,
+            allergies: widget.allergies,
+            conditions: widget.conditions,
+            medications: widget.medications,
+            surgeries: widget.surgeries,
+            emergencyContactName: widget.emergencyContactName,
+            emergencyContactPhone: widget.emergencyContactPhone,
           ),
         ),
       );

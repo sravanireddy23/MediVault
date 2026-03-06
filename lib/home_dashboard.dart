@@ -4,11 +4,25 @@ import 'emergency_info_screen.dart';
 class HomeDashboard extends StatefulWidget {
   final String userName;
   final String bloodGroup;
+  final String age;
+  final String allergies;
+  final String conditions;
+  final String medications;
+  final String surgeries;
+  final String emergencyContactName;
+  final String emergencyContactPhone;
 
   const HomeDashboard({
     super.key,
     this.userName = 'User',
     this.bloodGroup = '—',
+    this.age = '—',
+    this.allergies = '',
+    this.conditions = '',
+    this.medications = '',
+    this.surgeries = '',
+    this.emergencyContactName = '',
+    this.emergencyContactPhone = '',
   });
 
   @override
@@ -118,6 +132,26 @@ class _HomeDashboardState extends State<HomeDashboard>
     super.dispose();
   }
 
+  // ── Navigate to Emergency Info with real data ──────────────────────────────
+  void _openEmergencyInfo() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EmergencyInfoScreen(
+          name: widget.userName,
+          age: widget.age,
+          bloodGroup: widget.bloodGroup,
+          allergies: widget.allergies,
+          conditions: widget.conditions,
+          medications: widget.medications,
+          surgeries: widget.surgeries,
+          emergencyContactName: widget.emergencyContactName,
+          emergencyContactPhone: widget.emergencyContactPhone,
+        ),
+      ),
+    );
+  }
+
   // ── Build ──────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
@@ -178,7 +212,6 @@ class _HomeDashboardState extends State<HomeDashboard>
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // ── Greeting ─────────────────────────────
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -203,7 +236,6 @@ class _HomeDashboardState extends State<HomeDashboard>
                       ),
                     ],
                   ),
-                  // ── Blood Group + Avatar ──────────────────
                   Row(
                     children: [
                       Container(
@@ -272,14 +304,7 @@ class _HomeDashboardState extends State<HomeDashboard>
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
       child: GestureDetector(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const EmergencyInfoScreen(),
-            ),
-          );
-        },
+        onTap: _openEmergencyInfo,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
           decoration: BoxDecoration(
@@ -378,8 +403,7 @@ class _HomeDashboardState extends State<HomeDashboard>
                   const SizedBox(height: 3),
                   Text(
                     stat['label'] as String,
-                    style:
-                    const TextStyle(fontSize: 12, color: Colors.grey),
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ],
               ),
@@ -620,7 +644,7 @@ class _HomeDashboardState extends State<HomeDashboard>
           children: [
             _buildNavItem(0, Icons.home_rounded, 'Home'),
             _buildNavItem(1, Icons.folder_copy_rounded, 'Records'),
-            const SizedBox(width: 40), // FAB notch space
+            const SizedBox(width: 40),
             _buildNavItem(2, Icons.people_alt_rounded, 'Doctors'),
             _buildNavItem(3, Icons.person_rounded, 'Profile'),
           ],
@@ -637,8 +661,7 @@ class _HomeDashboardState extends State<HomeDashboard>
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(icon,
-              color:
-              isSelected ? const Color(0xFF1565C0) : Colors.grey,
+              color: isSelected ? const Color(0xFF1565C0) : Colors.grey,
               size: 22),
           const SizedBox(height: 3),
           Text(
