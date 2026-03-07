@@ -4,6 +4,7 @@ import 'otp_screen.dart';
 class MobileScreen extends StatefulWidget {
   final String? userName;
   final String? age;
+  final String? gender;
   final String? bloodGroup;
   final String? allergies;
   final String? conditions;
@@ -16,6 +17,7 @@ class MobileScreen extends StatefulWidget {
     super.key,
     this.userName,
     this.age,
+    this.gender,
     this.bloodGroup,
     this.allergies,
     this.conditions,
@@ -48,6 +50,7 @@ class _MobileScreenState extends State<MobileScreen> {
             mobileNumber: _mobileController.text.trim(),
             userName: widget.userName,
             age: widget.age,
+            gender: widget.gender,
             bloodGroup: widget.bloodGroup,
             allergies: widget.allergies,
             conditions: widget.conditions,
@@ -84,11 +87,8 @@ class _MobileScreenState extends State<MobileScreen> {
             children: [
               const SizedBox(height: 20),
 
-              // ── Greeting ───────────────────────────────────
               Text(
-                isNewUser
-                    ? 'Hi, ${widget.userName}!'
-                    : 'Hi, Welcome Back!',
+                isNewUser ? 'Hi, ${widget.userName}!' : 'Hi, Welcome Back!',
                 style: const TextStyle(
                   color: Color(0xFF1A1A2E),
                   fontSize: 30,
@@ -110,7 +110,6 @@ class _MobileScreenState extends State<MobileScreen> {
 
               const SizedBox(height: 40),
 
-              // ── Mobile illustration ────────────────────────
               Center(
                 child: Container(
                   width: 100,
@@ -123,17 +122,13 @@ class _MobileScreenState extends State<MobileScreen> {
                       width: 2,
                     ),
                   ),
-                  child: const Icon(
-                    Icons.phone_android_rounded,
-                    color: Color(0xFF1565C0),
-                    size: 50,
-                  ),
+                  child: const Icon(Icons.phone_android_rounded,
+                      color: Color(0xFF1565C0), size: 50),
                 ),
               ),
 
               const SizedBox(height: 40),
 
-              // ── Mobile Number ──────────────────────────────
               const Text(
                 'Mobile Number',
                 style: TextStyle(
@@ -164,10 +159,9 @@ class _MobileScreenState extends State<MobileScreen> {
                 decoration: InputDecoration(
                   hintText: 'Enter 10-digit mobile number',
                   hintStyle: TextStyle(
-                    color: Colors.grey.shade400,
-                    fontSize: 15,
-                    letterSpacing: 0,
-                  ),
+                      color: Colors.grey.shade400,
+                      fontSize: 15,
+                      letterSpacing: 0),
                   prefixIcon: Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 14),
@@ -190,21 +184,19 @@ class _MobileScreenState extends State<MobileScreen> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
-                      color: const Color(0xFF1565C0).withValues(alpha: 0.3),
-                    ),
+                        color:
+                        const Color(0xFF1565C0).withValues(alpha: 0.3)),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
-                      color: const Color(0xFF1565C0).withValues(alpha: 0.3),
-                    ),
+                        color:
+                        const Color(0xFF1565C0).withValues(alpha: 0.3)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(
-                      color: Color(0xFF1565C0),
-                      width: 2,
-                    ),
+                        color: Color(0xFF1565C0), width: 2),
                   ),
                   errorBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -221,15 +213,12 @@ class _MobileScreenState extends State<MobileScreen> {
               const SizedBox(height: 12),
               Text(
                 'We will send a 6-digit OTP to verify your number.',
-                style: TextStyle(
-                  color: Colors.grey.shade400,
-                  fontSize: 13,
-                ),
+                style:
+                TextStyle(color: Colors.grey.shade400, fontSize: 13),
               ),
 
               const SizedBox(height: 40),
 
-              // ── Send OTP Button ────────────────────────────
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(

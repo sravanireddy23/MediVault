@@ -5,6 +5,7 @@ class OtpScreen extends StatefulWidget {
   final String mobileNumber;
   final String? userName;
   final String? age;
+  final String? gender;
   final String? bloodGroup;
   final String? allergies;
   final String? conditions;
@@ -18,6 +19,7 @@ class OtpScreen extends StatefulWidget {
     required this.mobileNumber,
     this.userName,
     this.age,
+    this.gender,
     this.bloodGroup,
     this.allergies,
     this.conditions,
@@ -34,8 +36,7 @@ class OtpScreen extends StatefulWidget {
 class _OtpScreenState extends State<OtpScreen> {
   final List<TextEditingController> _controllers =
   List.generate(6, (_) => TextEditingController());
-  final List<FocusNode> _focusNodes =
-  List.generate(6, (_) => FocusNode());
+  final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
 
   int _resendSeconds = 30;
   bool _canResend = false;
@@ -67,12 +68,8 @@ class _OtpScreenState extends State<OtpScreen> {
 
   @override
   void dispose() {
-    for (var c in _controllers) {
-      c.dispose();
-    }
-    for (var f in _focusNodes) {
-      f.dispose();
-    }
+    for (var c in _controllers) { c.dispose(); }
+    for (var f in _focusNodes) { f.dispose(); }
     super.dispose();
   }
 
@@ -86,14 +83,14 @@ class _OtpScreenState extends State<OtpScreen> {
       return;
     }
     // TODO: Verify OTP with Firebase
-    // Navigate to HomeDashboard with all signup data
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(
         builder: (context) => HomeDashboard(
           userName: widget.userName ?? 'User',
-          bloodGroup: widget.bloodGroup ?? '—',
           age: widget.age ?? '—',
+          gender: widget.gender ?? '—',
+          bloodGroup: widget.bloodGroup ?? '—',
           allergies: widget.allergies ?? '',
           conditions: widget.conditions ?? '',
           medications: widget.medications ?? '',
@@ -125,7 +122,6 @@ class _OtpScreenState extends State<OtpScreen> {
           children: [
             const SizedBox(height: 20),
 
-            // ── Title ──────────────────────────────────────
             const Text(
               'Verify Your Number',
               style: TextStyle(
@@ -138,10 +134,7 @@ class _OtpScreenState extends State<OtpScreen> {
             RichText(
               text: TextSpan(
                 style: TextStyle(
-                  color: Colors.grey.shade500,
-                  fontSize: 15,
-                  height: 1.5,
-                ),
+                    color: Colors.grey.shade500, fontSize: 15, height: 1.5),
                 children: [
                   const TextSpan(text: 'We sent a 6-digit OTP to\n'),
                   TextSpan(
@@ -157,7 +150,6 @@ class _OtpScreenState extends State<OtpScreen> {
 
             const SizedBox(height: 48),
 
-            // ── OTP Boxes ──────────────────────────────────
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: List.generate(6, (index) {
@@ -182,23 +174,19 @@ class _OtpScreenState extends State<OtpScreen> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(
-                          color: const Color(0xFF1565C0)
-                              .withValues(alpha: 0.3),
-                        ),
+                            color: const Color(0xFF1565C0)
+                                .withValues(alpha: 0.3)),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(
-                          color: const Color(0xFF1565C0)
-                              .withValues(alpha: 0.3),
-                        ),
+                            color: const Color(0xFF1565C0)
+                                .withValues(alpha: 0.3)),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: const BorderSide(
-                          color: Color(0xFF1565C0),
-                          width: 2,
-                        ),
+                            color: Color(0xFF1565C0), width: 2),
                       ),
                     ),
                     onChanged: (value) {
@@ -215,7 +203,6 @@ class _OtpScreenState extends State<OtpScreen> {
 
             const SizedBox(height: 24),
 
-            // ── Resend OTP ─────────────────────────────────
             Center(
               child: _canResend
                   ? TextButton(
@@ -237,15 +224,12 @@ class _OtpScreenState extends State<OtpScreen> {
                   : Text(
                 'Resend OTP in $_resendSeconds seconds',
                 style: TextStyle(
-                  color: Colors.grey.shade400,
-                  fontSize: 14,
-                ),
+                    color: Colors.grey.shade400, fontSize: 14),
               ),
             ),
 
             const SizedBox(height: 40),
 
-            // ── Verify Button ──────────────────────────────
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(

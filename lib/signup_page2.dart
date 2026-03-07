@@ -43,14 +43,13 @@ class _SignUpPage2State extends State<SignUpPage2> {
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
-      // Pass ALL collected data to MobileScreen → OtpScreen → HomeDashboard
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
           builder: (context) => MobileScreen(
             userName: widget.name,
-            // ── Pass signup data through to HomeDashboard ──
             age: widget.age,
+            gender: widget.gender,
             bloodGroup: widget.bloodGroup,
             allergies: _allergiesController.text.trim(),
             conditions: _chronicController.text.trim(),
@@ -119,10 +118,7 @@ class _SignUpPage2State extends State<SignUpPage2> {
               const SizedBox(height: 8),
               Text(
                 'Step 2 of 2  —  Critical Medical Emergency Info',
-                style: TextStyle(
-                  color: Colors.grey.shade500,
-                  fontSize: 13,
-                ),
+                style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
               ),
 
               const SizedBox(height: 16),
@@ -159,7 +155,6 @@ class _SignUpPage2State extends State<SignUpPage2> {
 
               const SizedBox(height: 24),
 
-              // ── Known Allergies ────────────────────────────
               _buildLabel('Known Allergies'),
               const SizedBox(height: 4),
               _buildSubLabel('e.g. Penicillin, Peanuts, Dust'),
@@ -173,7 +168,6 @@ class _SignUpPage2State extends State<SignUpPage2> {
 
               const SizedBox(height: 22),
 
-              // ── Chronic Conditions ─────────────────────────
               _buildLabel('Chronic Conditions'),
               const SizedBox(height: 4),
               _buildSubLabel('e.g. Diabetes, Hypertension, Asthma'),
@@ -187,7 +181,6 @@ class _SignUpPage2State extends State<SignUpPage2> {
 
               const SizedBox(height: 22),
 
-              // ── Current Medications ────────────────────────
               _buildLabel('Current Medications'),
               const SizedBox(height: 4),
               _buildSubLabel('e.g. Metformin 500mg, Amlodipine 5mg'),
@@ -201,7 +194,6 @@ class _SignUpPage2State extends State<SignUpPage2> {
 
               const SizedBox(height: 22),
 
-              // ── Past Surgeries ─────────────────────────────
               _buildLabel('Past Surgeries'),
               const SizedBox(height: 4),
               _buildSubLabel('e.g. Appendectomy 2019, Knee surgery 2021'),
@@ -215,7 +207,7 @@ class _SignUpPage2State extends State<SignUpPage2> {
 
               const SizedBox(height: 28),
 
-              // ── Emergency Contact divider ──────────────────
+              // ── Emergency Contact ──────────────────────────
               Row(
                 children: [
                   const Icon(Icons.contact_phone_outlined,
@@ -240,7 +232,6 @@ class _SignUpPage2State extends State<SignUpPage2> {
 
               const SizedBox(height: 16),
 
-              // ── Emergency Contact Name ─────────────────────
               _buildLabel('Contact Name'),
               const SizedBox(height: 8),
               _buildTextField(
@@ -257,7 +248,6 @@ class _SignUpPage2State extends State<SignUpPage2> {
 
               const SizedBox(height: 22),
 
-              // ── Emergency Contact Phone ────────────────────
               _buildLabel('Contact Phone Number'),
               const SizedBox(height: 8),
               _buildTextField(
@@ -278,7 +268,6 @@ class _SignUpPage2State extends State<SignUpPage2> {
 
               const SizedBox(height: 40),
 
-              // ── Submit Button ──────────────────────────────
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -317,7 +306,6 @@ class _SignUpPage2State extends State<SignUpPage2> {
     );
   }
 
-  // ── Reusable label ───────────────────────────────────────
   Widget _buildLabel(String text) {
     return Text(
       text,
@@ -329,18 +317,13 @@ class _SignUpPage2State extends State<SignUpPage2> {
     );
   }
 
-  // ── Reusable sub label ───────────────────────────────────
   Widget _buildSubLabel(String text) {
     return Text(
       text,
-      style: TextStyle(
-        color: Colors.grey.shade500,
-        fontSize: 12,
-      ),
+      style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
     );
   }
 
-  // ── Reusable text field ──────────────────────────────────
   Widget _buildTextField({
     required TextEditingController controller,
     required String hint,
@@ -356,10 +339,7 @@ class _SignUpPage2State extends State<SignUpPage2> {
       readOnly: readOnly,
       maxLines: maxLines,
       validator: validator,
-      style: const TextStyle(
-        color: Color(0xFF1A1A2E),
-        fontSize: 15,
-      ),
+      style: const TextStyle(color: Color(0xFF1A1A2E), fontSize: 15),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 15),
@@ -370,22 +350,18 @@ class _SignUpPage2State extends State<SignUpPage2> {
         const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: const Color(0xFF1565C0).withValues(alpha: 0.3),
-          ),
+          borderSide:
+          BorderSide(color: const Color(0xFF1565C0).withValues(alpha: 0.3)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: const Color(0xFF1565C0).withValues(alpha: 0.3),
-          ),
+          borderSide:
+          BorderSide(color: const Color(0xFF1565C0).withValues(alpha: 0.3)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-            color: Color(0xFF1565C0),
-            width: 2,
-          ),
+          borderSide:
+          const BorderSide(color: Color(0xFF1565C0), width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

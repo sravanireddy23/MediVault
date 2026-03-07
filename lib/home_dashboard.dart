@@ -3,8 +3,9 @@ import 'emergency_info_screen.dart';
 
 class HomeDashboard extends StatefulWidget {
   final String userName;
-  final String bloodGroup;
   final String age;
+  final String gender;
+  final String bloodGroup;
   final String allergies;
   final String conditions;
   final String medications;
@@ -15,8 +16,9 @@ class HomeDashboard extends StatefulWidget {
   const HomeDashboard({
     super.key,
     this.userName = 'User',
-    this.bloodGroup = '—',
     this.age = '—',
+    this.gender = '—',
+    this.bloodGroup = '—',
     this.allergies = '',
     this.conditions = '',
     this.medications = '',
@@ -38,14 +40,12 @@ class _HomeDashboardState extends State<HomeDashboard>
 
   int _selectedIndex = 0;
 
-  // ── Quick Stats ────────────────────────────────────────────────────────────
   final List<Map<String, dynamic>> _quickStats = [
     {'label': 'Records', 'value': '24', 'icon': Icons.folder_copy_rounded},
     {'label': 'Doctors', 'value': '3', 'icon': Icons.medical_services_rounded},
     {'label': 'Upcoming', 'value': '1', 'icon': Icons.calendar_today_rounded},
   ];
 
-  // ── Menu Items ─────────────────────────────────────────────────────────────
   final List<Map<String, dynamic>> _menuItems = [
     {
       'title': 'Medical Records',
@@ -77,7 +77,6 @@ class _HomeDashboardState extends State<HomeDashboard>
     },
   ];
 
-  // ── Recent Records ─────────────────────────────────────────────────────────
   final List<Map<String, dynamic>> _recentRecords = [
     {
       'title': 'Blood Test Report',
@@ -106,13 +105,9 @@ class _HomeDashboardState extends State<HomeDashboard>
   void initState() {
     super.initState();
     _fadeController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
+        vsync: this, duration: const Duration(milliseconds: 600));
     _slideController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    );
+        vsync: this, duration: const Duration(milliseconds: 500));
     _fadeAnimation =
         CurvedAnimation(parent: _fadeController, curve: Curves.easeIn);
     _slideAnimation = Tween<Offset>(
@@ -120,7 +115,6 @@ class _HomeDashboardState extends State<HomeDashboard>
       end: Offset.zero,
     ).animate(
         CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic));
-
     _fadeController.forward();
     _slideController.forward();
   }
@@ -132,7 +126,6 @@ class _HomeDashboardState extends State<HomeDashboard>
     super.dispose();
   }
 
-  // ── Navigate to Emergency Info with real data ──────────────────────────────
   void _openEmergencyInfo() {
     Navigator.push(
       context,
@@ -140,6 +133,7 @@ class _HomeDashboardState extends State<HomeDashboard>
         builder: (_) => EmergencyInfoScreen(
           name: widget.userName,
           age: widget.age,
+          gender: widget.gender,
           bloodGroup: widget.bloodGroup,
           allergies: widget.allergies,
           conditions: widget.conditions,
@@ -152,7 +146,6 @@ class _HomeDashboardState extends State<HomeDashboard>
     );
   }
 
-  // ── Build ──────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -187,7 +180,6 @@ class _HomeDashboardState extends State<HomeDashboard>
     );
   }
 
-  // ── App Bar ────────────────────────────────────────────────────────────────
   Widget _buildAppBar() {
     return SliverAppBar(
       expandedHeight: 120,
@@ -229,10 +221,9 @@ class _HomeDashboardState extends State<HomeDashboard>
                       const Text(
                         'Your health records, all in one place',
                         style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w300,
-                        ),
+                            color: Colors.white70,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w300),
                       ),
                     ],
                   ),
@@ -256,10 +247,9 @@ class _HomeDashboardState extends State<HomeDashboard>
                             Text(
                               widget.bloodGroup,
                               style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                              ),
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
@@ -281,10 +271,9 @@ class _HomeDashboardState extends State<HomeDashboard>
                                 ? widget.userName[0].toUpperCase()
                                 : 'U',
                             style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold),
                           ),
                         ),
                       ),
@@ -299,7 +288,6 @@ class _HomeDashboardState extends State<HomeDashboard>
     );
   }
 
-  // ── Emergency Banner ───────────────────────────────────────────────────────
   Widget _buildEmergencyBanner() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
@@ -341,15 +329,15 @@ class _HomeDashboardState extends State<HomeDashboard>
                     Text(
                       'Emergency Info',
                       style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15),
                     ),
                     SizedBox(height: 2),
                     Text(
                       'Accessible without login · Tap to view',
-                      style: TextStyle(color: Colors.white70, fontSize: 12),
+                      style:
+                      TextStyle(color: Colors.white70, fontSize: 12),
                     ),
                   ],
                 ),
@@ -363,7 +351,6 @@ class _HomeDashboardState extends State<HomeDashboard>
     );
   }
 
-  // ── Quick Stats ────────────────────────────────────────────────────────────
   Widget _buildQuickStats() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
@@ -392,19 +379,15 @@ class _HomeDashboardState extends State<HomeDashboard>
                   Icon(stat['icon'] as IconData,
                       color: const Color(0xFF1565C0), size: 22),
                   const SizedBox(height: 8),
-                  Text(
-                    stat['value'] as String,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A1A2E),
-                    ),
-                  ),
+                  Text(stat['value'] as String,
+                      style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1A1A2E))),
                   const SizedBox(height: 3),
-                  Text(
-                    stat['label'] as String,
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
+                  Text(stat['label'] as String,
+                      style: const TextStyle(
+                          fontSize: 12, color: Colors.grey)),
                 ],
               ),
             ),
@@ -414,7 +397,6 @@ class _HomeDashboardState extends State<HomeDashboard>
     );
   }
 
-  // ── Menu Grid ──────────────────────────────────────────────────────────────
   Widget _buildMenuGrid() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
@@ -424,10 +406,9 @@ class _HomeDashboardState extends State<HomeDashboard>
           const Text(
             'Quick Access',
             style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1A1A2E),
-            ),
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1A1A2E)),
           ),
           const SizedBox(height: 14),
           GridView.builder(
@@ -443,9 +424,7 @@ class _HomeDashboardState extends State<HomeDashboard>
             itemBuilder: (context, index) {
               final item = _menuItems[index];
               return GestureDetector(
-                onTap: () {
-                  // TODO: Navigate to respective screens
-                },
+                onTap: () {},
                 child: Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
@@ -469,31 +448,23 @@ class _HomeDashboardState extends State<HomeDashboard>
                           color: item['lightColor'] as Color,
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Icon(
-                          item['icon'] as IconData,
-                          color: item['color'] as Color,
-                          size: 20,
-                        ),
+                        child: Icon(item['icon'] as IconData,
+                            color: item['color'] as Color, size: 20),
                       ),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            item['title'] as String,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1A1A2E),
-                            ),
-                          ),
+                          Text(item['title'] as String,
+                              style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF1A1A2E))),
                           const SizedBox(height: 2),
-                          Text(
-                            item['subtitle'] as String,
-                            style: const TextStyle(
-                                fontSize: 11, color: Colors.grey),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                          Text(item['subtitle'] as String,
+                              style: const TextStyle(
+                                  fontSize: 11, color: Colors.grey),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis),
                         ],
                       ),
                     ],
@@ -507,7 +478,6 @@ class _HomeDashboardState extends State<HomeDashboard>
     );
   }
 
-  // ── Recent Records ─────────────────────────────────────────────────────────
   Widget _buildRecentRecords() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 28, 16, 0),
@@ -517,31 +487,23 @@ class _HomeDashboardState extends State<HomeDashboard>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Recent Records',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A1A2E),
-                ),
-              ),
+              const Text('Recent Records',
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A2E))),
               TextButton(
-                onPressed: () {
-                  // TODO: Navigate to Medical Records screen
-                },
+                onPressed: () {},
                 style: TextButton.styleFrom(
                   padding: EdgeInsets.zero,
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-                child: const Text(
-                  'See all',
-                  style: TextStyle(
-                    color: Color(0xFF1565C0),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                child: const Text('See all',
+                    style: TextStyle(
+                        color: Color(0xFF1565C0),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600)),
               ),
             ],
           ),
@@ -561,10 +523,9 @@ class _HomeDashboardState extends State<HomeDashboard>
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 3))
         ],
       ),
       child: Row(
@@ -583,45 +544,37 @@ class _HomeDashboardState extends State<HomeDashboard>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  record['title'] as String,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF1A1A2E),
-                  ),
-                ),
+                Text(record['title'] as String,
+                    style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1A1A2E))),
                 const SizedBox(height: 3),
-                Text(
-                  record['department'] as String,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
+                Text(record['department'] as String,
+                    style: const TextStyle(
+                        fontSize: 12, color: Colors.grey)),
               ],
             ),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                record['date'] as String,
-                style: const TextStyle(fontSize: 11, color: Colors.grey),
-              ),
+              Text(record['date'] as String,
+                  style:
+                  const TextStyle(fontSize: 11, color: Colors.grey)),
               const SizedBox(height: 6),
               Container(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: const Color(0xFFE3F2FD),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Text(
-                  'View',
-                  style: TextStyle(
-                    color: Color(0xFF1565C0),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                child: const Text('View',
+                    style: TextStyle(
+                        color: Color(0xFF1565C0),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600)),
               ),
             ],
           ),
@@ -630,7 +583,6 @@ class _HomeDashboardState extends State<HomeDashboard>
     );
   }
 
-  // ── Bottom Nav ─────────────────────────────────────────────────────────────
   Widget _buildBottomNav() {
     return BottomAppBar(
       shape: const CircularNotchedRectangle(),
@@ -664,26 +616,22 @@ class _HomeDashboardState extends State<HomeDashboard>
               color: isSelected ? const Color(0xFF1565C0) : Colors.grey,
               size: 22),
           const SizedBox(height: 3),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              color: isSelected ? const Color(0xFF1565C0) : Colors.grey,
-              fontWeight:
-              isSelected ? FontWeight.w600 : FontWeight.normal,
-            ),
-          ),
+          Text(label,
+              style: TextStyle(
+                  fontSize: 11,
+                  color:
+                  isSelected ? const Color(0xFF1565C0) : Colors.grey,
+                  fontWeight: isSelected
+                      ? FontWeight.w600
+                      : FontWeight.normal)),
         ],
       ),
     );
   }
 
-  // ── FAB ────────────────────────────────────────────────────────────────────
   Widget _buildFAB() {
     return FloatingActionButton(
-      onPressed: () {
-        // TODO: Navigate to Upload Records screen
-      },
+      onPressed: () {},
       backgroundColor: const Color(0xFF1565C0),
       elevation: 4,
       shape: const CircleBorder(),
