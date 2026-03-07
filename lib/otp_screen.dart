@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'home_dashboard.dart';
 
 class OtpScreen extends StatefulWidget {
@@ -35,11 +36,13 @@ class OtpScreen extends StatefulWidget {
 
 class _OtpScreenState extends State<OtpScreen> {
   final List<TextEditingController> _controllers =
-  List.generate(6, (_) => TextEditingController());
+      List.generate(6, (_) => TextEditingController());
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
 
   int _resendSeconds = 30;
   bool _canResend = false;
+  bool _showError = false;
+  String _errorMessage = '';
 
   @override
   void initState() {
@@ -68,20 +71,45 @@ class _OtpScreenState extends State<OtpScreen> {
 
   @override
   void dispose() {
-    for (var c in _controllers) { c.dispose(); }
-    for (var f in _focusNodes) { f.dispose(); }
+    for (var c in _controllers) {
+      c.dispose();
+    }
+    for (var f in _focusNodes) {
+      f.dispose();
+    }
     super.dispose();
+  }
+
+  // ── Check if a box is empty ──────────────────────────
+  bool _isBoxEmpty(int index) {
+    return _showError && _controllers[index].text.isEmpty;
   }
 
   void _verifyOtp() {
     final otp = _controllers.map((c) => c.text).join();
+
+    // Check if all boxes are filled
     if (otp.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Please enter the complete 6-digit OTP')),
-      );
+      setState(() {
+        _showError = true;
+        _errorMessage = 'Please enter the complete 6-digit OTP';
+      });
+      // Focus first empty box
+      for (int i = 0; i < 6; i++) {
+        if (_controllers[i].text.isEmpty) {
+          _focusNodes[i].requestFocus();
+          break;
+        }
+      }
       return;
     }
+
+    // Clear error on success
+    setState(() {
+      _showError = false;
+      _errorMessage = '';
+    });
+
     // TODO: Verify OTP with Firebase
     Navigator.pushAndRemoveUntil(
       context,
@@ -99,7 +127,7 @@ class _OtpScreenState extends State<OtpScreen> {
           emergencyContactPhone: widget.emergencyContactPhone ?? '',
         ),
       ),
-          (route) => false,
+      (route) => false,
     );
   }
 
@@ -150,6 +178,7 @@ class _OtpScreenState extends State<OtpScreen> {
 
             const SizedBox(height: 48),
 
+            // ── OTP Boxes ──────────────────────────────────
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: List.generate(6, (index) {
@@ -162,6 +191,10 @@ class _OtpScreenState extends State<OtpScreen> {
                     keyboardType: TextInputType.number,
                     textAlign: TextAlign.center,
                     maxLength: 1,
+                    // ── Only allow digits ──────────────────
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
                     style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -170,66 +203,131 @@ class _OtpScreenState extends State<OtpScreen> {
                     decoration: InputDecoration(
                       counterText: '',
                       filled: true,
-                      fillColor: const Color(0xFFF5F8FF),
+                      fillColor: _isBoxEmpty(index)
+                          ? const Color(0xFFFFEBEE) // red tint if empty on submit
+                          : const Color(0xFFF5F8FF),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(
-                            color: const Color(0xFF1565C0)
-                                .withValues(alpha: 0.3)),
+                          color: _isBoxEmpty(index)
+                              ? Colors.red
+                              : const Color(0xFF1565C0).withValues(alpha: 0.3),
+                        ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(
-                            color: const Color(0xFF1565C0)
-                                .withValues(alpha: 0.3)),
+                          color: _isBoxEmpty(index)
+                              ? Colors.red
+                              : const Color(0xFF1565C0).withValues(alpha: 0.3),
+                          width: _isBoxEmpty(index) ? 1.5 : 1,
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                            color: Color(0xFF1565C0), width: 2),
+                        borderSide: BorderSide(
+                          color: _isBoxEmpty(index)
+                              ? Colors.red
+                              : const Color(0xFF1565C0),
+                          width: 2,
+                        ),
                       ),
                     ),
                     onChanged: (value) {
-                      if (value.isNotEmpty && index < 5) {
-                        _focusNodes[index + 1].requestFocus();
-                      } else if (value.isEmpty && index > 0) {
-                        _focusNodes[index - 1].requestFocus();
+                      // Clear error when user starts typing
+                      if (_showError && value.isNotEmpty) {
+                        setState(() {
+                          _showError = false;
+                          _errorMessage = '';
+                        });
+                      }
+
+                      if (value.isNotEmpty) {
+                        // Move to next box
+                        if (index < 5) {
+                          _focusNodes[index + 1].requestFocus();
+                        } else {
+                          // Last box filled — hide keyboard
+                          _focusNodes[index].unfocus();
+                          // Auto verify when all 6 digits filled
+                          final otp =
+                              _controllers.map((c) => c.text).join();
+                          if (otp.length == 6) {
+                            _verifyOtp();
+                          }
+                        }
+                      } else {
+                        // Move to previous box on delete
+                        if (index > 0) {
+                          _focusNodes[index - 1].requestFocus();
+                        }
                       }
                     },
+                    // ── Handle backspace properly ──────────
+                    onTapOutside: (_) => FocusScope.of(context).unfocus(),
                   ),
                 );
               }),
             ),
 
+            // ── Inline error message ───────────────────────
+            if (_showError)
+              Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: Row(
+                  children: [
+                    const Icon(Icons.error_outline,
+                        color: Colors.red, size: 16),
+                    const SizedBox(width: 6),
+                    Text(
+                      _errorMessage,
+                      style: TextStyle(
+                          color: Colors.red.shade700, fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+
             const SizedBox(height: 24),
 
+            // ── Resend OTP ─────────────────────────────────
             Center(
               child: _canResend
                   ? TextButton(
-                onPressed: () {
-                  _startResendTimer();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('OTP resent!')),
-                  );
-                },
-                child: const Text(
-                  'Resend OTP',
-                  style: TextStyle(
-                    color: Color(0xFF1565C0),
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              )
+                      onPressed: () {
+                        // Clear all boxes on resend
+                        for (var c in _controllers) {
+                          c.clear();
+                        }
+                        setState(() {
+                          _showError = false;
+                          _errorMessage = '';
+                        });
+                        _startResendTimer();
+                        _focusNodes[0].requestFocus();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('OTP resent!')),
+                        );
+                      },
+                      child: const Text(
+                        'Resend OTP',
+                        style: TextStyle(
+                          color: Color(0xFF1565C0),
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    )
                   : Text(
-                'Resend OTP in $_resendSeconds seconds',
-                style: TextStyle(
-                    color: Colors.grey.shade400, fontSize: 14),
-              ),
+                      'Resend OTP in $_resendSeconds seconds',
+                      style: TextStyle(
+                          color: Colors.grey.shade400, fontSize: 14),
+                    ),
             ),
 
             const SizedBox(height: 40),
 
+            // ── Verify Button ──────────────────────────────
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
