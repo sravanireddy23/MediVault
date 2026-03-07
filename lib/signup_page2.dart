@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'mobile_screen.dart';
 
 class SignUpPage2 extends StatefulWidget {
@@ -155,6 +156,7 @@ class _SignUpPage2State extends State<SignUpPage2> {
 
               const SizedBox(height: 24),
 
+              // ── Known Allergies (no validation) ────────────
               _buildLabel('Known Allergies'),
               const SizedBox(height: 4),
               _buildSubLabel('e.g. Penicillin, Peanuts, Dust'),
@@ -168,6 +170,7 @@ class _SignUpPage2State extends State<SignUpPage2> {
 
               const SizedBox(height: 22),
 
+              // ── Chronic Conditions (no validation) ─────────
               _buildLabel('Chronic Conditions'),
               const SizedBox(height: 4),
               _buildSubLabel('e.g. Diabetes, Hypertension, Asthma'),
@@ -181,6 +184,7 @@ class _SignUpPage2State extends State<SignUpPage2> {
 
               const SizedBox(height: 22),
 
+              // ── Current Medications (no validation) ────────
               _buildLabel('Current Medications'),
               const SizedBox(height: 4),
               _buildSubLabel('e.g. Metformin 500mg, Amlodipine 5mg'),
@@ -194,6 +198,7 @@ class _SignUpPage2State extends State<SignUpPage2> {
 
               const SizedBox(height: 22),
 
+              // ── Past Surgeries (no validation) ─────────────
               _buildLabel('Past Surgeries'),
               const SizedBox(height: 4),
               _buildSubLabel('e.g. Appendectomy 2019, Knee surgery 2021'),
@@ -232,6 +237,7 @@ class _SignUpPage2State extends State<SignUpPage2> {
 
               const SizedBox(height: 16),
 
+              // ── Emergency Contact Name (WITH validation) ───
               _buildLabel('Contact Name'),
               const SizedBox(height: 8),
               _buildTextField(
@@ -242,12 +248,22 @@ class _SignUpPage2State extends State<SignUpPage2> {
                   if (value == null || value.trim().isEmpty) {
                     return 'Please enter emergency contact name';
                   }
+                  if (value.trim().length < 3) {
+                    return 'Name must be at least 3 characters';
+                  }
+                  if (value.trim().length > 50) {
+                    return 'Name must be less than 50 characters';
+                  }
+                  if (!RegExp(r"^[a-zA-Z\s]+$").hasMatch(value.trim())) {
+                    return 'Name must contain letters only';
+                  }
                   return null;
                 },
               ),
 
               const SizedBox(height: 22),
 
+              // ── Emergency Contact Phone (WITH validation) ──
               _buildLabel('Contact Phone Number'),
               const SizedBox(height: 8),
               _buildTextField(
@@ -255,12 +271,19 @@ class _SignUpPage2State extends State<SignUpPage2> {
                 hint: 'Enter 10-digit mobile number',
                 icon: Icons.phone_outlined,
                 keyboardType: TextInputType.phone,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(10),
+                ],
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return 'Please enter emergency contact number';
                   }
                   if (value.trim().length != 10) {
-                    return 'Enter a valid 10-digit number';
+                    return 'Phone number must be exactly 10 digits';
+                  }
+                  if (!RegExp(r'^[6-9][0-9]{9}$').hasMatch(value.trim())) {
+                    return 'Enter a valid Indian mobile number';
                   }
                   return null;
                 },
@@ -268,6 +291,7 @@ class _SignUpPage2State extends State<SignUpPage2> {
 
               const SizedBox(height: 40),
 
+              // ── Submit Button ──────────────────────────────
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -331,6 +355,7 @@ class _SignUpPage2State extends State<SignUpPage2> {
     TextInputType keyboardType = TextInputType.text,
     bool readOnly = false,
     int maxLines = 1,
+    List<TextInputFormatter>? inputFormatters,
     String? Function(String?)? validator,
   }) {
     return TextFormField(
@@ -338,6 +363,7 @@ class _SignUpPage2State extends State<SignUpPage2> {
       keyboardType: keyboardType,
       readOnly: readOnly,
       maxLines: maxLines,
+      inputFormatters: inputFormatters,
       validator: validator,
       style: const TextStyle(color: Color(0xFF1A1A2E), fontSize: 15),
       decoration: InputDecoration(
@@ -347,21 +373,20 @@ class _SignUpPage2State extends State<SignUpPage2> {
         filled: true,
         fillColor: const Color(0xFFF5F8FF),
         contentPadding:
-        const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide:
-          BorderSide(color: const Color(0xFF1565C0).withValues(alpha: 0.3)),
+              BorderSide(color: const Color(0xFF1565C0).withValues(alpha: 0.3)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide:
-          BorderSide(color: const Color(0xFF1565C0).withValues(alpha: 0.3)),
+              BorderSide(color: const Color(0xFF1565C0).withValues(alpha: 0.3)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:
-          const BorderSide(color: Color(0xFF1565C0), width: 2),
+          borderSide: const BorderSide(color: Color(0xFF1565C0), width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

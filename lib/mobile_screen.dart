@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'otp_screen.dart';
 
 class MobileScreen extends StatefulWidget {
@@ -142,6 +143,11 @@ class _MobileScreenState extends State<MobileScreen> {
                 controller: _mobileController,
                 keyboardType: TextInputType.phone,
                 maxLength: 10,
+                // ── Only allows digits 0-9, blocks letters & symbols ──
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(10),
+                ],
                 style: const TextStyle(
                   color: Color(0xFF1A1A2E),
                   fontSize: 16,
@@ -152,7 +158,10 @@ class _MobileScreenState extends State<MobileScreen> {
                     return 'Please enter your mobile number';
                   }
                   if (value.trim().length != 10) {
-                    return 'Enter a valid 10-digit mobile number';
+                    return 'Mobile number must be exactly 10 digits';
+                  }
+                  if (!RegExp(r'^[6-9][0-9]{9}$').hasMatch(value.trim())) {
+                    return 'Enter a valid Indian mobile number (starts with 6-9)';
                   }
                   return null;
                 },
@@ -175,7 +184,7 @@ class _MobileScreenState extends State<MobileScreen> {
                     ),
                   ),
                   prefixIconConstraints:
-                  const BoxConstraints(minWidth: 0, minHeight: 0),
+                      const BoxConstraints(minWidth: 0, minHeight: 0),
                   filled: true,
                   fillColor: const Color(0xFFF5F8FF),
                   counterText: '',
@@ -185,13 +194,13 @@ class _MobileScreenState extends State<MobileScreen> {
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
                         color:
-                        const Color(0xFF1565C0).withValues(alpha: 0.3)),
+                            const Color(0xFF1565C0).withValues(alpha: 0.3)),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
                         color:
-                        const Color(0xFF1565C0).withValues(alpha: 0.3)),
+                            const Color(0xFF1565C0).withValues(alpha: 0.3)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -205,7 +214,7 @@ class _MobileScreenState extends State<MobileScreen> {
                   focusedErrorBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide:
-                    const BorderSide(color: Colors.red, width: 2),
+                        const BorderSide(color: Colors.red, width: 2),
                   ),
                 ),
               ),
@@ -214,7 +223,7 @@ class _MobileScreenState extends State<MobileScreen> {
               Text(
                 'We will send a 6-digit OTP to verify your number.',
                 style:
-                TextStyle(color: Colors.grey.shade400, fontSize: 13),
+                    TextStyle(color: Colors.grey.shade400, fontSize: 13),
               ),
 
               const SizedBox(height: 40),
