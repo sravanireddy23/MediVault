@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'emergency_info_screen.dart';
+import 'medical_records_screen.dart';
+import 'upload_record_screen.dart';
 
 class HomeDashboard extends StatefulWidget {
   final String userName;
@@ -40,64 +42,68 @@ class _HomeDashboardState extends State<HomeDashboard>
 
   int _selectedIndex = 0;
 
+  static const _blue      = Color(0xFF1565C0);
+  static const _blueLight = Color(0xFF1E88E5);
+  static const _lightBlue = Color(0xFFE3F2FD);
+  static const _darkText  = Color(0xFF1A1A2E);
+
   final List<Map<String, dynamic>> _quickStats = [
-    {'label': 'Records', 'value': '24', 'icon': Icons.folder_copy_rounded},
-    {'label': 'Doctors', 'value': '3', 'icon': Icons.medical_services_rounded},
-    {'label': 'Upcoming', 'value': '1', 'icon': Icons.calendar_today_rounded},
+    {'label': 'Records',  'value': '24', 'icon': Icons.folder_copy_rounded},
+    {'label': 'Doctors',  'value': '3',  'icon': Icons.medical_services_rounded},
+    {'label': 'Upcoming', 'value': '1',  'icon': Icons.calendar_today_rounded},
   ];
 
-  final List<Map<String, dynamic>> _menuItems = [
-    {
-      'title': 'Medical Records',
-      'subtitle': 'View all reports & scans',
-      'icon': Icons.folder_copy_rounded,
-      'color': Color(0xFF1565C0),
-      'lightColor': Color(0xFFE3F2FD),
-    },
-    {
-      'title': 'Upload Records',
-      'subtitle': 'Add new documents',
-      'icon': Icons.cloud_upload_rounded,
-      'color': Color(0xFF1976D2),
-      'lightColor': Color(0xFFE8F4FD),
-    },
-    {
-      'title': 'Doctor Access',
-      'subtitle': 'Share records securely',
-      'icon': Icons.people_alt_rounded,
-      'color': Color(0xFF1E88E5),
-      'lightColor': Color(0xFFEAF4FE),
-    },
-    {
-      'title': 'AI Explainer',
-      'subtitle': 'Understand your reports',
-      'icon': Icons.auto_awesome_rounded,
-      'color': Color(0xFF0D47A1),
-      'lightColor': Color(0xFFE0EAFF),
-    },
-  ];
-
-  final List<Map<String, dynamic>> _recentRecords = [
+  final List<Map<String, dynamic>> _recentlyOpened = [
     {
       'title': 'Blood Test Report',
       'department': 'Pathology',
       'date': 'Mar 2, 2025',
       'icon': Icons.science_rounded,
-      'color': Color(0xFF1565C0),
+      'color': Color(0xFF8E24AA),
+      'fileType': 'LAB',
     },
     {
       'title': 'Chest X-Ray',
       'department': 'Radiology',
       'date': 'Feb 14, 2025',
       'icon': Icons.image_search_rounded,
-      'color': Color(0xFF1E88E5),
+      'color': Color(0xFF1565C0),
+      'fileType': 'SCAN',
     },
     {
-      'title': 'Cardiology Consultation',
+      'title': 'ECG Report',
       'department': 'Cardiology',
       'date': 'Jan 28, 2025',
       'icon': Icons.favorite_rounded,
-      'color': Color(0xFFD32F2F),
+      'color': Color(0xFFE53935),
+      'fileType': 'PDF',
+    },
+  ];
+
+  final List<Map<String, dynamic>> _recentlyUploaded = [
+    {
+      'title': 'Knee X-Ray',
+      'department': 'Orthopedics',
+      'date': 'Jan 30, 2025',
+      'icon': Icons.accessibility_new_rounded,
+      'color': Color(0xFFEF6C00),
+      'fileType': 'SCAN',
+    },
+    {
+      'title': 'Thyroid Function Test',
+      'department': 'Endocrinology',
+      'date': 'Mar 1, 2025',
+      'icon': Icons.water_drop_rounded,
+      'color': Color(0xFF00838F),
+      'fileType': 'LAB',
+    },
+    {
+      'title': 'MRI Brain',
+      'department': 'Neurology',
+      'date': 'Feb 28, 2025',
+      'icon': Icons.psychology_rounded,
+      'color': Color(0xFF00897B),
+      'fileType': 'SCAN',
     },
   ];
 
@@ -113,8 +119,8 @@ class _HomeDashboardState extends State<HomeDashboard>
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.06),
       end: Offset.zero,
-    ).animate(
-        CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic));
+    ).animate(CurvedAnimation(
+        parent: _slideController, curve: Curves.easeOutCubic));
     _fadeController.forward();
     _slideController.forward();
   }
@@ -164,8 +170,7 @@ class _HomeDashboardState extends State<HomeDashboard>
                   children: [
                     _buildEmergencyBanner(),
                     _buildQuickStats(),
-                    _buildMenuGrid(),
-                    _buildRecentRecords(),
+                    _buildQuickAccess(),
                     const SizedBox(height: 100),
                   ],
                 ),
@@ -180,27 +185,27 @@ class _HomeDashboardState extends State<HomeDashboard>
     );
   }
 
+  // ── App Bar ──────────────────────────────────────────────────────────────────
   Widget _buildAppBar() {
     return SliverAppBar(
       expandedHeight: 120,
       floating: false,
       pinned: true,
       elevation: 0,
-      backgroundColor: const Color(0xFF1565C0),
+      backgroundColor: _blue,
       automaticallyImplyLeading: false,
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFF1565C0), Color(0xFF1E88E5)],
+              colors: [_blue, _blueLight],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
           ),
           child: SafeArea(
             child: Padding(
-              padding:
-              const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -236,21 +241,18 @@ class _HomeDashboardState extends State<HomeDashboard>
                           color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.4),
-                              width: 1),
+                              color: Colors.white.withValues(alpha: 0.4)),
                         ),
                         child: Row(
                           children: [
                             const Icon(Icons.bloodtype_rounded,
                                 color: Colors.white, size: 14),
                             const SizedBox(width: 4),
-                            Text(
-                              widget.bloodGroup,
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold),
-                            ),
+                            Text(widget.bloodGroup,
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold)),
                           ],
                         ),
                       ),
@@ -288,6 +290,7 @@ class _HomeDashboardState extends State<HomeDashboard>
     );
   }
 
+  // ── Emergency Banner ─────────────────────────────────────────────────────────
   Widget _buildEmergencyBanner() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
@@ -326,19 +329,14 @@ class _HomeDashboardState extends State<HomeDashboard>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Emergency Info',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15),
-                    ),
+                    Text('Emergency Info',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15)),
                     SizedBox(height: 2),
-                    Text(
-                      'Accessible without login · Tap to view',
-                      style:
-                      TextStyle(color: Colors.white70, fontSize: 12),
-                    ),
+                    Text('Accessible without login · Tap to view',
+                        style: TextStyle(color: Colors.white70, fontSize: 12)),
                   ],
                 ),
               ),
@@ -351,6 +349,7 @@ class _HomeDashboardState extends State<HomeDashboard>
     );
   }
 
+  // ── Quick Stats ──────────────────────────────────────────────────────────────
   Widget _buildQuickStats() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
@@ -361,8 +360,7 @@ class _HomeDashboardState extends State<HomeDashboard>
             child: Container(
               margin: EdgeInsets.only(
                   right: index < _quickStats.length - 1 ? 10 : 0),
-              padding:
-              const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
+              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(14),
@@ -376,18 +374,16 @@ class _HomeDashboardState extends State<HomeDashboard>
               ),
               child: Column(
                 children: [
-                  Icon(stat['icon'] as IconData,
-                      color: const Color(0xFF1565C0), size: 22),
+                  Icon(stat['icon'] as IconData, color: _blue, size: 22),
                   const SizedBox(height: 8),
                   Text(stat['value'] as String,
                       style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A1A2E))),
+                          color: _darkText)),
                   const SizedBox(height: 3),
                   Text(stat['label'] as String,
-                      style: const TextStyle(
-                          fontSize: 12, color: Colors.grey)),
+                      style: const TextStyle(fontSize: 12, color: Colors.grey)),
                 ],
               ),
             ),
@@ -397,192 +393,386 @@ class _HomeDashboardState extends State<HomeDashboard>
     );
   }
 
-  Widget _buildMenuGrid() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Quick Access',
-            style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1A1A2E)),
-          ),
-          const SizedBox(height: 14),
-          GridView.builder(
-            physics: const NeverScrollableScrollPhysics(),
-            shrinkWrap: true,
-            itemCount: _menuItems.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 1.55,
-            ),
-            itemBuilder: (context, index) {
-              final item = _menuItems[index];
-              return GestureDetector(
-                onTap: () {},
-                child: Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.06),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: item['lightColor'] as Color,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(item['icon'] as IconData,
-                            color: item['color'] as Color, size: 20),
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(item['title'] as String,
-                              style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF1A1A2E))),
-                          const SizedBox(height: 2),
-                          Text(item['subtitle'] as String,
-                              style: const TextStyle(
-                                  fontSize: 11, color: Colors.grey),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRecentRecords() {
+  // ── Quick Access ─────────────────────────────────────────────────────────────
+  Widget _buildQuickAccess() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 28, 16, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Recent Records',
-                  style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A1A2E))),
-              TextButton(
-                onPressed: () {},
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.zero,
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: const Text('See all',
-                    style: TextStyle(
-                        color: Color(0xFF1565C0),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600)),
-              ),
-            ],
+          const Text('Quick Access',
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: _darkText)),
+          const SizedBox(height: 20),
+
+          // 1. Recently Opened
+          _buildQuickSection(
+            title: 'Recently Opened',
+            icon: Icons.history_rounded,
+            iconColor: _blue,
+            bgColor: _lightBlue,
+            records: _recentlyOpened,
+            onSeeAll: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const MedicalRecordsScreen())),
           ),
-          const SizedBox(height: 12),
-          ..._recentRecords.map((record) => _buildRecordTile(record)),
+
+          const SizedBox(height: 24),
+
+          // 2. Recently Uploaded
+          _buildQuickSection(
+            title: 'Recently Uploaded',
+            icon: Icons.cloud_done_rounded,
+            iconColor: const Color(0xFF1976D2),
+            bgColor: const Color(0xFFE8F4FD),
+            records: _recentlyUploaded,
+            onSeeAll: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const UploadRecordScreen())),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildRecordTile(Map<String, dynamic> record) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
+  Widget _buildQuickSection({
+    required String title,
+    required IconData icon,
+    required Color iconColor,
+    required Color bgColor,
+    required List<Map<String, dynamic>> records,
+    required VoidCallback onSeeAll,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                  color: bgColor, borderRadius: BorderRadius.circular(8)),
+              child: Icon(icon, color: iconColor, size: 16),
+            ),
+            const SizedBox(width: 10),
+            Text(title,
+                style: const TextStyle(
+                    color: _darkText,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700)),
+            const Spacer(),
+            GestureDetector(
+              onTap: onSeeAll,
+              child: Text('See all',
+                  style: TextStyle(
+                      color: iconColor,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 130,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: records.length,
+            itemBuilder: (context, index) =>
+                _buildRecordCard(records[index]),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRecordCard(Map<String, dynamic> r) {
+    final color    = r['color'] as Color;
+    final fileType = r['fileType'] as String;
+
+    Color ftColor;
+    switch (fileType) {
+      case 'PDF':  ftColor = const Color(0xFFE53935); break;
+      case 'LAB':  ftColor = const Color(0xFF8E24AA); break;
+      case 'SCAN': ftColor = _blue;                   break;
+      default:     ftColor = const Color(0xFF2E7D32); break;
+    }
+
+    return GestureDetector(
+      onTap: () => _showRecordDetail(r),
+      child: Container(
+        width: 155,
+        margin: const EdgeInsets.only(right: 12),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border(left: BorderSide(color: color, width: 3.5)),
+          boxShadow: [
+            BoxShadow(
               color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 8,
-              offset: const Offset(0, 3))
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: (record['color'] as Color).withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
+              offset: const Offset(0, 3),
             ),
-            child: Icon(record['icon'] as IconData,
-                color: record['color'] as Color, size: 20),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(record['title'] as String,
-                    style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF1A1A2E))),
-                const SizedBox(height: 3),
-                Text(record['department'] as String,
-                    style: const TextStyle(
-                        fontSize: 12, color: Colors.grey)),
+                Container(
+                  padding: const EdgeInsets.all(7),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(r['icon'] as IconData, color: color, size: 16),
+                ),
+                Container(
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: ftColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(5),
+                    border: Border.all(color: ftColor.withValues(alpha: 0.35)),
+                  ),
+                  child: Text(fileType,
+                      style: TextStyle(
+                          color: ftColor,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold)),
+                ),
               ],
             ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(record['date'] as String,
-                  style:
-                  const TextStyle(fontSize: 11, color: Colors.grey)),
-              const SizedBox(height: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE3F2FD),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Text('View',
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(r['title'] as String,
+                    style: const TextStyle(
+                        color: _darkText,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 3),
+                Text(r['department'] as String,
                     style: TextStyle(
-                        color: Color(0xFF1565C0),
-                        fontSize: 11,
+                        color: color,
+                        fontSize: 10,
                         fontWeight: FontWeight.w600)),
-              ),
-            ],
-          ),
-        ],
+                const SizedBox(height: 2),
+                Text(r['date'] as String,
+                    style:
+                    const TextStyle(color: Colors.grey, fontSize: 10)),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
+  // ── Record Detail Bottom Sheet ───────────────────────────────────────────────
+  void _showRecordDetail(Map<String, dynamic> r) {
+    final color    = r['color'] as Color;
+    final fileType = r['fileType'] as String;
+
+    Color ftColor;
+    switch (fileType) {
+      case 'PDF':  ftColor = const Color(0xFFE53935); break;
+      case 'LAB':  ftColor = const Color(0xFF8E24AA); break;
+      case 'SCAN': ftColor = _blue;                   break;
+      default:     ftColor = const Color(0xFF2E7D32); break;
+    }
+
+    IconData ftIcon;
+    switch (fileType) {
+      case 'PDF':  ftIcon = Icons.picture_as_pdf_rounded;  break;
+      case 'LAB':  ftIcon = Icons.biotech_rounded;          break;
+      case 'SCAN': ftIcon = Icons.document_scanner_rounded; break;
+      default:     ftIcon = Icons.image_rounded;            break;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle
+            Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Header row
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(r['icon'] as IconData, color: color, size: 26),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(r['title'] as String,
+                          style: const TextStyle(
+                              color: _darkText,
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      Text(r['department'] as String,
+                          style: TextStyle(
+                              color: color,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: ftColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: ftColor.withValues(alpha: 0.4)),
+                  ),
+                  child: Text(fileType,
+                      style: TextStyle(
+                          color: ftColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // Details card
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F8FF),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Column(
+                children: [
+                  _detailRow(Icons.calendar_today_rounded,
+                      'Date', r['date'] as String),
+                  const SizedBox(height: 14),
+                  _detailRow(Icons.local_hospital_rounded,
+                      'Department', r['department'] as String),
+                  const SizedBox(height: 14),
+                  _detailRow(ftIcon, 'Record Type', fileType),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Action buttons
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {},
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: _blue,
+                      side: const BorderSide(color: _blue),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                    icon: const Icon(Icons.share_rounded, size: 18),
+                    label: const Text('Share',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 15)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const MedicalRecordsScreen()),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _blue,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                    ),
+                    icon: const Icon(Icons.open_in_new_rounded, size: 18),
+                    label: const Text('View Record',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 15)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _detailRow(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(7),
+          decoration: BoxDecoration(
+            color: const Color(0xFFE3F2FD),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: _blue, size: 15),
+        ),
+        const SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label,
+                style: TextStyle(
+                    color: Colors.grey.shade400,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500)),
+            const SizedBox(height: 2),
+            Text(value,
+                style: const TextStyle(
+                    color: _darkText,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // ── Bottom Nav ───────────────────────────────────────────────────────────────
   Widget _buildBottomNav() {
     return BottomAppBar(
       shape: const CircularNotchedRectangle(),
@@ -594,33 +784,40 @@ class _HomeDashboardState extends State<HomeDashboard>
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _buildNavItem(0, Icons.home_rounded, 'Home'),
-            _buildNavItem(1, Icons.folder_copy_rounded, 'Records'),
-            const SizedBox(width: 40),
-            _buildNavItem(2, Icons.people_alt_rounded, 'Doctors'),
-            _buildNavItem(3, Icons.person_rounded, 'Profile'),
+            _navItem(0, Icons.home_rounded, 'Home', onTap: () {}),
+            _navItem(1, Icons.folder_copy_rounded, 'Records',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const MedicalRecordsScreen()),
+                ).then((_) => setState(() => _selectedIndex = 0))),
+            const SizedBox(width: 48), // FAB gap
+            _navItem(2, Icons.people_alt_rounded, 'Doctors', onTap: () {}),
+            _navItem(3, Icons.person_rounded, 'Profile', onTap: () {}),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildNavItem(int index, IconData icon, String label) {
+  Widget _navItem(int index, IconData icon, String label,
+      {required VoidCallback onTap}) {
     final isSelected = _selectedIndex == index;
     return GestureDetector(
-      onTap: () => setState(() => _selectedIndex = index),
+      onTap: () {
+        setState(() => _selectedIndex = index);
+        onTap();
+      },
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(icon,
-              color: isSelected ? const Color(0xFF1565C0) : Colors.grey,
-              size: 22),
+              color: isSelected ? _blue : Colors.grey, size: 22),
           const SizedBox(height: 3),
           Text(label,
               style: TextStyle(
                   fontSize: 11,
-                  color:
-                  isSelected ? const Color(0xFF1565C0) : Colors.grey,
+                  color: isSelected ? _blue : Colors.grey,
                   fontWeight: isSelected
                       ? FontWeight.w600
                       : FontWeight.normal)),
@@ -629,10 +826,12 @@ class _HomeDashboardState extends State<HomeDashboard>
     );
   }
 
+  // ── FAB ──────────────────────────────────────────────────────────────────────
   Widget _buildFAB() {
     return FloatingActionButton(
-      onPressed: () {},
-      backgroundColor: const Color(0xFF1565C0),
+      onPressed: () => Navigator.push(context,
+          MaterialPageRoute(builder: (_) => const UploadRecordScreen())),
+      backgroundColor: _blue,
       elevation: 4,
       shape: const CircleBorder(),
       child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
