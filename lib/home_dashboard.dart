@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'emergency_info_screen.dart';
 import 'medical_records_screen.dart';
 import 'upload_record_screen.dart';
+import 'profile_screen.dart';
 
 class HomeDashboard extends StatefulWidget {
   final String userName;
@@ -793,7 +794,22 @@ class _HomeDashboardState extends State<HomeDashboard>
                 ).then((_) => setState(() => _selectedIndex = 0))),
             const SizedBox(width: 48), // FAB gap
             _navItem(2, Icons.people_alt_rounded, 'Doctors', onTap: () {}),
-            _navItem(3, Icons.person_rounded, 'Profile', onTap: () {}),
+            _navItem(3, Icons.person_rounded, 'Profile',
+                onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => ProfileScreen(
+                          userName: widget.userName,
+                          age: widget.age,
+                          gender: widget.gender,
+                          bloodGroup: widget.bloodGroup,
+                          allergies: widget.allergies,
+                          conditions: widget.conditions,
+                          medications: widget.medications,
+                          surgeries: widget.surgeries,
+                          emergencyContactName: widget.emergencyContactName,
+                          emergencyContactPhone: widget.emergencyContactPhone,
+                        ))).then((_) => setState(() => _selectedIndex = 0))),
           ],
         ),
       ),
