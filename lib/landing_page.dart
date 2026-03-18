@@ -31,21 +31,42 @@ class _LandingPageState extends State<LandingPage> {
       'Critical health info available instantly when it matters most. Your allergies, chronic conditions, and medications are always one tap away.',
       bulletPoints: [],
     ),
-    // Slide 3 - Smart Organization
-    OnboardingData(
-      icon: Icons.folder_special_outlined,
-      secondaryIcon: Icons.timeline_outlined,
-      title: 'Smart Organization\nof Records',
-      description: 'Your records organized the way you need them:',
-      bulletPoints: [
-        ' • Department-wise folders categorization',
-        ' • Year-wise timeline view',
-        '',
-        '',
-        'Track your health journey',
-      ],
-    ),
   ];
+
+  // final List<OnboardingData> _pages = [
+  //   // Slide 1 - Secure Health Records
+  //   OnboardingData(
+  //     icon: Icons.shield_outlined,
+  //     secondaryIcon: Icons.medical_information_outlined,
+  //     title: 'Secure Health Records',
+  //     description:
+  //     'Store all your medical reports, prescriptions, and health documents safely in one cloud-based vault — accessible only by you.',
+  //     bulletPoints: [],
+  //   ),
+  //   // Slide 2 - Emergency Medical Information
+  //   OnboardingData(
+  //     icon: Icons.emergency_outlined,
+  //     secondaryIcon: Icons.favorite_outline,
+  //     title: 'Emergency Medical\nInformation',
+  //     description:
+  //     'Critical health info available instantly when it matters most. Your allergies, chronic conditions, and medications are always one tap away.',
+  //     bulletPoints: [],
+  //   ),
+  //   // Slide 3 - AI Powered Health Assistant
+  //   OnboardingData(
+  //     icon: Icons.psychology_outlined,
+  //     secondaryIcon: Icons.chat_bubble_outline,
+  //     title: 'AI Powered\nHealth Assistant',
+  //     description: 'Your personal health AI that:',
+  //     bulletPoints: [
+  //       ' • Explains your medical reports in simple language',
+  //       ' • Answers your health and medicine questions',
+  //       ' • Auto organizes records by visit and timeline',
+  //       '',
+  //       'Your health, made simple',
+  //     ],
+  //   ),
+  // ];
 
   void _nextPage() {
     if (_currentPage < _pages.length - 1) {

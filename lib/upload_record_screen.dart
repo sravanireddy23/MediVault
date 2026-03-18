@@ -17,44 +17,61 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
   static const _lightBg   = Color(0xFFF5F8FF);
   static const _darkText  = Color(0xFF1A1A2E);
 
-  // ── Form state ───────────────────────────────────────────────────────────────
-  final _formKey = GlobalKey<FormState>();
+  // ── Upload type: 0=New Visit, 1=Add to Existing, 2=Direct Upload ─────────────
+  int _uploadType = 0;
+
+  // ── Form keys ────────────────────────────────────────────────────────────────
+  final _newVisitFormKey     = GlobalKey<FormState>();
+  final _existingFormKey     = GlobalKey<FormState>();
+  final _directFormKey       = GlobalKey<FormState>();
+
+  // ── Controllers ──────────────────────────────────────────────────────────────
   final _titleController    = TextEditingController();
   final _doctorController   = TextEditingController();
   final _hospitalController = TextEditingController();
-  final _notesController    = TextEditingController();
+  final _reportNameController = TextEditingController();
 
-  String? _selectedDept;
-  String? _selectedFileType;
+  // ── State ────────────────────────────────────────────────────────────────────
   DateTime? _selectedDate;
-  String?  _uploadedFileName; // simulates a picked file
-  bool _isUploading = false;
+  String?   _uploadedFileName;
+  bool      _isUploading = false;
+  String?   _selectedEpisodeId; // for existing episode selection
 
   late AnimationController _checkController;
   late Animation<double>   _checkAnimation;
 
-  // ── Departments ──────────────────────────────────────────────────────────────
-  final List<Map<String, dynamic>> _departments = [
-    {'name': 'Cardiology',       'icon': Icons.favorite_rounded,          'color': const Color(0xFFE53935), 'light': const Color(0xFFFFEBEE)},
-    {'name': 'Pathology',        'icon': Icons.science_rounded,           'color': const Color(0xFF8E24AA), 'light': const Color(0xFFF3E5F5)},
-    {'name': 'Radiology',        'icon': Icons.image_search_rounded,      'color': const Color(0xFF1565C0), 'light': const Color(0xFFE3F2FD)},
-    {'name': 'Neurology',        'icon': Icons.psychology_rounded,        'color': const Color(0xFF00897B), 'light': const Color(0xFFE0F2F1)},
-    {'name': 'Orthopedics',      'icon': Icons.accessibility_new_rounded, 'color': const Color(0xFFEF6C00), 'light': const Color(0xFFFFF3E0)},
-    {'name': 'Endocrinology',    'icon': Icons.water_drop_rounded,        'color': const Color(0xFF00838F), 'light': const Color(0xFFE0F7FA)},
-    {'name': 'Gastroenterology', 'icon': Icons.medical_services_rounded,  'color': const Color(0xFF2E7D32), 'light': const Color(0xFFE8F5E9)},
-    {'name': 'Pulmonology',      'icon': Icons.air_rounded,               'color': const Color(0xFF1976D2), 'light': const Color(0xFFE8F4FD)},
-    {'name': 'Dermatology',      'icon': Icons.face_rounded,              'color': const Color(0xFFC0392B), 'light': const Color(0xFFFDECEC)},
-    {'name': 'Ophthalmology',    'icon': Icons.visibility_rounded,        'color': const Color(0xFF6A1B9A), 'light': const Color(0xFFF3E5F5)},
-    {'name': 'ENT',              'icon': Icons.hearing_rounded,           'color': const Color(0xFF558B2F), 'light': const Color(0xFFF1F8E9)},
-    {'name': 'General',          'icon': Icons.local_hospital_rounded,    'color': const Color(0xFF546E7A), 'light': const Color(0xFFECEFF1)},
-  ];
-
-  // ── File types ───────────────────────────────────────────────────────────────
-  final List<Map<String, dynamic>> _fileTypes = [
-    {'type': 'PDF',  'icon': Icons.picture_as_pdf_rounded,   'color': const Color(0xFFE53935), 'label': 'PDF Report'},
-    {'type': 'LAB',  'icon': Icons.biotech_rounded,           'color': const Color(0xFF8E24AA), 'label': 'Lab Result'},
-    {'type': 'SCAN', 'icon': Icons.document_scanner_rounded,  'color': const Color(0xFF1565C0), 'label': 'Scan / X-Ray'},
-    {'type': 'IMG',  'icon': Icons.image_rounded,             'color': const Color(0xFF2E7D32), 'label': 'Image'},
+  // ── Sample existing episodes (will come from Firestore later) ────────────────
+  final List<Map<String, dynamic>> _existingEpisodes = [
+    {
+      'id': 'e1',
+      'doctor': 'Dr. Raghav Menon',
+      'hospital': 'Apollo Hospital',
+      'department': 'Cardiology',
+      'date': 'Mar 2, 2025',
+      'color': Color(0xFFE53935),
+      'lightColor': Color(0xFFFFEBEE),
+      'icon': Icons.favorite_rounded,
+    },
+    {
+      'id': 'e2',
+      'doctor': 'Dr. Priya Sharma',
+      'hospital': 'Medanta',
+      'department': 'Pathology',
+      'date': 'Jan 5, 2025',
+      'color': Color(0xFF8E24AA),
+      'lightColor': Color(0xFFF3E5F5),
+      'icon': Icons.science_rounded,
+    },
+    {
+      'id': 'e3',
+      'doctor': 'Dr. Suresh Nair',
+      'hospital': 'KIMS',
+      'department': 'Radiology',
+      'date': 'Sep 3, 2024',
+      'color': Color(0xFF1565C0),
+      'lightColor': Color(0xFFE3F2FD),
+      'icon': Icons.image_search_rounded,
+    },
   ];
 
   @override
@@ -75,20 +92,12 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
     _titleController.dispose();
     _doctorController.dispose();
     _hospitalController.dispose();
-    _notesController.dispose();
+    _reportNameController.dispose();
     _checkController.dispose();
     super.dispose();
   }
 
-  // ── Helpers ──────────────────────────────────────────────────────────────────
-  Map<String, dynamic>? get _selectedDeptInfo =>
-      _departments.firstWhere(
-            (d) => d['name'] == _selectedDept,
-        orElse: () => {},
-      ).isEmpty
-          ? null
-          : _departments.firstWhere((d) => d['name'] == _selectedDept);
-
+  // ── Format date ──────────────────────────────────────────────────────────────
   String _formatDate(DateTime d) {
     const months = [
       'Jan','Feb','Mar','Apr','May','Jun',
@@ -97,11 +106,12 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
     return '${months[d.month - 1]} ${d.day}, ${d.year}';
   }
 
+  // ── Date picker ──────────────────────────────────────────────────────────────
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
-      firstDate: DateTime(2000),
+      firstDate: DateTime(1990),
       lastDate: DateTime.now(),
       builder: (context, child) {
         return Theme(
@@ -120,56 +130,81 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
     if (picked != null) setState(() => _selectedDate = picked);
   }
 
-  // ── Simulate file pick ───────────────────────────────────────────────────────
+  // ── File picker (simulated — will use file_picker package later) ─────────────
   void _pickFile() {
     // TODO: integrate file_picker package
     setState(() {
-      _uploadedFileName = 'document_${DateTime.now().millisecondsSinceEpoch}.pdf';
+      _uploadedFileName =
+      'document_${DateTime.now().millisecondsSinceEpoch}.pdf';
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Row(
           children: [
-            Icon(Icons.check_circle_rounded, color: Colors.white, size: 16),
+            Icon(Icons.check_circle_rounded,
+                color: Colors.white, size: 16),
             SizedBox(width: 8),
             Text('File selected successfully'),
           ],
         ),
         backgroundColor: const Color(0xFF2E7D32),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10)),
         margin: const EdgeInsets.all(12),
       ),
     );
   }
 
-  // ── Submit ───────────────────────────────────────────────────────────────────
+  // ── Validate and submit ──────────────────────────────────────────────────────
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-    if (_selectedDept == null) {
-      _showError('Please select a department');
-      return;
+    // Validate based on upload type
+    bool isValid = false;
+
+    if (_uploadType == 0) {
+      // New Visit
+      isValid = _newVisitFormKey.currentState?.validate() ?? false;
+      if (isValid && _selectedDate == null) {
+        _showError('Please select the visit date');
+        return;
+      }
+      if (isValid && _uploadedFileName == null) {
+        _showError('Please upload a file');
+        return;
+      }
+    } else if (_uploadType == 1) {
+      // Add to Existing
+      if (_selectedEpisodeId == null) {
+        _showError('Please select an existing episode');
+        return;
+      }
+      isValid = _existingFormKey.currentState?.validate() ?? false;
+      if (isValid && _uploadedFileName == null) {
+        _showError('Please upload a file');
+        return;
+      }
+    } else {
+      // Direct Upload
+      isValid = _directFormKey.currentState?.validate() ?? false;
+      if (isValid && _selectedDate == null) {
+        _showError('Please select the report date');
+        return;
+      }
+      if (isValid && _uploadedFileName == null) {
+        _showError('Please upload a file');
+        return;
+      }
     }
-    if (_selectedFileType == null) {
-      _showError('Please select a record type');
-      return;
-    }
-    if (_selectedDate == null) {
-      _showError('Please select the record date');
-      return;
-    }
+
+    if (!isValid) return;
 
     setState(() => _isUploading = true);
-
-    // Simulate upload delay
+    // TODO: Save to Firestore + AWS S3
     await Future.delayed(const Duration(seconds: 2));
-
     if (!mounted) return;
     setState(() => _isUploading = false);
     _checkController.forward();
-
-    // Show success and pop after a moment
-    await Future.delayed(const Duration(seconds: 2));
+    await Future.delayed(const Duration(milliseconds: 500));
     if (!mounted) return;
     _showSuccessSheet();
   }
@@ -187,13 +222,21 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
         ),
         backgroundColor: const Color(0xFFE53935),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10)),
         margin: const EdgeInsets.all(12),
       ),
     );
   }
 
+  // ── Success Sheet ─────────────────────────────────────────────────────────────
   void _showSuccessSheet() {
+    final title = _uploadType == 0
+        ? _titleController.text
+        : _uploadType == 1
+        ? _titleController.text
+        : _reportNameController.text;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -209,15 +252,15 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 40, height: 4,
+              width: 40,
+              height: 4,
               decoration: BoxDecoration(
                 color: Colors.grey.shade300,
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
             const SizedBox(height: 32),
-
-            // Success animation circle
+            // Success icon
             ScaleTransition(
               scale: _checkAnimation,
               child: Container(
@@ -232,7 +275,6 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
               ),
             ),
             const SizedBox(height: 20),
-
             const Text('Record Uploaded!',
                 style: TextStyle(
                     color: _darkText,
@@ -240,66 +282,48 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
                     fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Text(
-              '${_titleController.text} has been\nsaved to your Medical Records.',
+              '$title has been saved to your Medical Records.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey.shade500, fontSize: 15, height: 1.5),
+              style: TextStyle(
+                  color: Colors.grey.shade500,
+                  fontSize: 15,
+                  height: 1.5),
             ),
-            const SizedBox(height: 28),
-
-            // Summary pill
+            const SizedBox(height: 16),
+            // AI note
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: _lightBg,
-                borderRadius: BorderRadius.circular(14),
+                color: const Color(0xFFE8F5E9),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                    color: const Color(0xFFA5D6A7), width: 0.8),
               ),
-              child: Row(
+              child: const Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: _selectedDeptInfo?['light'] ?? _lightBlue,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(
-                      _selectedDeptInfo?['icon'] ?? Icons.folder_rounded,
-                      color: _selectedDeptInfo?['color'] ?? _blue,
-                      size: 22,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
+                  Icon(Icons.psychology_rounded,
+                      color: Color(0xFF2E7D32), size: 18),
+                  SizedBox(width: 10),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(_titleController.text,
-                            style: const TextStyle(
-                                color: _darkText,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis),
-                        const SizedBox(height: 3),
-                        Text(
-                          '$_selectedDept  ·  ${_selectedDate != null ? _formatDate(_selectedDate!) : ''}',
-                          style: TextStyle(
-                              color: Colors.grey.shade500, fontSize: 12),
-                        ),
-                      ],
+                    child: Text(
+                      'AI will auto-detect the department from your report.',
+                      style: TextStyle(
+                          color: Color(0xFF2E7D32),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500),
                     ),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 28),
-
-            // Done button
+            // Back to dashboard
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  Navigator.pop(context); // close sheet
-                  Navigator.pop(context); // back to dashboard
+                  Navigator.pop(context);
+                  Navigator.pop(context);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _blue,
@@ -329,17 +353,20 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
     );
   }
 
+  // ── Reset form ───────────────────────────────────────────────────────────────
   void _resetForm() {
-    _formKey.currentState?.reset();
+    _newVisitFormKey.currentState?.reset();
+    _existingFormKey.currentState?.reset();
+    _directFormKey.currentState?.reset();
     _titleController.clear();
     _doctorController.clear();
     _hospitalController.clear();
-    _notesController.clear();
+    _reportNameController.clear();
     setState(() {
-      _selectedDept     = null;
-      _selectedFileType = null;
+      _uploadType       = 0;
       _selectedDate     = null;
       _uploadedFileName = null;
+      _selectedEpisodeId = null;
     });
     _checkController.reset();
   }
@@ -355,84 +382,27 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // ── Upload source picker ─────────────────────────
-                    _buildSectionLabel('Choose Upload Source', Icons.upload_rounded),
-                    const SizedBox(height: 12),
-                    _buildUploadSourceRow(),
-                    const SizedBox(height: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── Upload type selector ─────────────────────────
+                  _buildSectionLabel(
+                      'What type of upload?', Icons.category_rounded),
+                  const SizedBox(height: 12),
+                  _buildUploadTypeSelector(),
+                  const SizedBox(height: 24),
 
-                    // ── File type picker ─────────────────────────────
-                    _buildSectionLabel('Record Type', Icons.category_rounded),
-                    const SizedBox(height: 12),
-                    _buildFileTypeGrid(),
-                    const SizedBox(height: 24),
+                  // ── Dynamic form based on type ───────────────────
+                  if (_uploadType == 0) _buildNewVisitForm(),
+                  if (_uploadType == 1) _buildExistingVisitForm(),
+                  if (_uploadType == 2) _buildDirectUploadForm(),
 
-                    // ── Record title ─────────────────────────────────
-                    _buildSectionLabel('Record Title', Icons.title_rounded),
-                    const SizedBox(height: 10),
-                    _buildTextField(
-                      controller: _titleController,
-                      hint: 'e.g. Blood Test Report, Chest X-Ray',
-                      icon: Icons.description_outlined,
-                      validator: (v) => (v == null || v.trim().isEmpty)
-                          ? 'Please enter a title'
-                          : null,
-                    ),
-                    const SizedBox(height: 20),
+                  const SizedBox(height: 36),
 
-                    // ── Department picker ────────────────────────────
-                    _buildSectionLabel('Department', Icons.local_hospital_rounded),
-                    const SizedBox(height: 12),
-                    _buildDeptGrid(),
-                    const SizedBox(height: 20),
-
-                    // ── Doctor name ──────────────────────────────────
-                    _buildSectionLabel('Doctor Name', Icons.person_rounded),
-                    const SizedBox(height: 10),
-                    _buildTextField(
-                      controller: _doctorController,
-                      hint: 'e.g. Dr. Raghav Menon',
-                      icon: Icons.person_outline_rounded,
-                    ),
-                    const SizedBox(height: 20),
-
-                    // ── Hospital ─────────────────────────────────────
-                    _buildSectionLabel('Hospital / Clinic', Icons.business_rounded),
-                    const SizedBox(height: 10),
-                    _buildTextField(
-                      controller: _hospitalController,
-                      hint: 'e.g. Apollo Hospital, Hyderabad',
-                      icon: Icons.business_outlined,
-                    ),
-                    const SizedBox(height: 20),
-
-                    // ── Date picker ──────────────────────────────────
-                    _buildSectionLabel('Record Date', Icons.calendar_today_rounded),
-                    const SizedBox(height: 10),
-                    _buildDatePicker(),
-                    const SizedBox(height: 20),
-
-                    // ── Notes ────────────────────────────────────────
-                    _buildSectionLabel('Notes (Optional)', Icons.notes_rounded),
-                    const SizedBox(height: 10),
-                    _buildTextField(
-                      controller: _notesController,
-                      hint: 'Any additional notes about this record...',
-                      icon: Icons.notes_outlined,
-                      maxLines: 3,
-                    ),
-                    const SizedBox(height: 36),
-
-                    // ── Upload button ────────────────────────────────
-                    _buildUploadButton(),
-                    const SizedBox(height: 20),
-                  ],
-                ),
+                  // ── Upload button ────────────────────────────────
+                  _buildUploadButton(),
+                  const SizedBox(height: 20),
+                ],
               ),
             ),
           ),
@@ -467,22 +437,21 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
               padding: const EdgeInsets.fromLTRB(20, 44, 20, 10),
               child: Row(
                 children: [
-                  Expanded(
+                  const Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        const Text('Upload Record',
+                        Text('Upload Record',
                             style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 0.3)),
-                        const SizedBox(height: 4),
+                        SizedBox(height: 4),
                         Text('Add a new document to your health vault',
                             style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.8),
-                                fontSize: 13)),
+                                color: Colors.white70, fontSize: 13)),
                       ],
                     ),
                   ),
@@ -504,197 +473,451 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
     );
   }
 
-  // ── Section label ────────────────────────────────────────────────────────────
-  Widget _buildSectionLabel(String text, IconData icon) {
-    return Row(
-      children: [
-        Icon(icon, color: _blue, size: 16),
-        const SizedBox(width: 8),
-        Text(text,
-            style: const TextStyle(
-                color: _darkText,
-                fontSize: 15,
-                fontWeight: FontWeight.bold)),
-      ],
-    );
-  }
-
-  // ── Upload source row ────────────────────────────────────────────────────────
-  Widget _buildUploadSourceRow() {
-    final sources = [
-      {'label': 'Files',   'icon': Icons.folder_open_rounded,     'desc': 'PDF, DOC'},
-      {'label': 'Camera',  'icon': Icons.camera_alt_rounded,       'desc': 'Take photo'},
-      {'label': 'Gallery', 'icon': Icons.photo_library_rounded,    'desc': 'From gallery'},
-      {'label': 'Scan',    'icon': Icons.document_scanner_rounded, 'desc': 'Scan doc'},
+  // ── Upload type selector ─────────────────────────────────────────────────────
+  Widget _buildUploadTypeSelector() {
+    final types = [
+      {
+        'label': 'New Visit',
+        'sub': 'New doctor episode',
+        'icon': Icons.local_hospital_rounded,
+      },
+      {
+        'label': 'Add to Visit',
+        'sub': 'Existing episode',
+        'icon': Icons.add_to_photos_rounded,
+      },
+      {
+        'label': 'Direct Upload',
+        'sub': 'Lab / old report',
+        'icon': Icons.upload_file_rounded,
+      },
     ];
 
     return Row(
-      children: sources.map((s) {
+      children: List.generate(types.length, (index) {
+        final isSelected = _uploadType == index;
         return Expanded(
           child: GestureDetector(
-            onTap: _pickFile,
-            child: Container(
+            onTap: () => setState(() {
+              _uploadType = index;
+              _resetControllers();
+            }),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
               margin: EdgeInsets.only(
-                  right: s != sources.last ? 8 : 0),
-              padding: const EdgeInsets.symmetric(vertical: 14),
+                  right: index < types.length - 1 ? 8 : 0),
+              padding: const EdgeInsets.symmetric(
+                  vertical: 12, horizontal: 8),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: isSelected ? _blue : Colors.white,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: _uploadedFileName != null && s['label'] == 'Files'
+                  color: isSelected
                       ? _blue
-                      : Colors.grey.withValues(alpha: 0.2),
-                  width: _uploadedFileName != null && s['label'] == 'Files'
-                      ? 2
-                      : 1,
+                      : Colors.grey.withValues(alpha: 0.25),
+                  width: isSelected ? 2 : 1,
                 ),
-                boxShadow: [
+                boxShadow: isSelected
+                    ? [
+                  BoxShadow(
+                      color: _blue.withValues(alpha: 0.25),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3))
+                ]
+                    : [
                   BoxShadow(
                       color: Colors.black.withValues(alpha: 0.04),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2)),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2))
                 ],
               ),
               child: Column(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: _lightBlue,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(s['icon'] as IconData,
-                        color: _blue, size: 20),
+                  Icon(
+                    types[index]['icon'] as IconData,
+                    color: isSelected ? Colors.white : _blue,
+                    size: 22,
                   ),
-                  const SizedBox(height: 8),
-                  Text(s['label'] as String,
-                      style: const TextStyle(
-                          color: _darkText,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 6),
+                  Text(
+                    types[index]['label'] as String,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        color:
+                        isSelected ? Colors.white : _darkText,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 2),
-                  Text(s['desc'] as String,
-                      style: TextStyle(
-                          color: Colors.grey.shade400, fontSize: 10)),
+                  Text(
+                    types[index]['sub'] as String,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        color: isSelected
+                            ? Colors.white70
+                            : Colors.grey.shade400,
+                        fontSize: 9),
+                  ),
                 ],
               ),
             ),
           ),
         );
-      }).toList(),
+      }),
     );
   }
 
-  // ── File type grid (2 × 2) ───────────────────────────────────────────────────
-  Widget _buildFileTypeGrid() {
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 10,
-      mainAxisSpacing: 10,
-      childAspectRatio: 3.0,
-      children: _fileTypes.map((ft) {
-        final isSelected = _selectedFileType == ft['type'];
-        final color = ft['color'] as Color;
-        return GestureDetector(
-          onTap: () => setState(() => _selectedFileType = ft['type'] as String),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              color: isSelected ? color : Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isSelected ? color : Colors.grey.withValues(alpha: 0.25),
-                width: isSelected ? 2 : 1,
+  void _resetControllers() {
+    _titleController.clear();
+    _doctorController.clear();
+    _hospitalController.clear();
+    _reportNameController.clear();
+    _selectedDate = null;
+    _uploadedFileName = null;
+    _selectedEpisodeId = null;
+  }
+
+  // ── New Visit Form ───────────────────────────────────────────────────────────
+  Widget _buildNewVisitForm() {
+    return Form(
+      key: _newVisitFormKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionLabel('Doctor Name', Icons.person_rounded),
+          const SizedBox(height: 10),
+          _buildTextField(
+            controller: _doctorController,
+            hint: 'e.g. Dr. Raghav Menon',
+            icon: Icons.person_outline_rounded,
+            validator: (v) => (v == null || v.trim().isEmpty)
+                ? 'Please enter doctor name'
+                : null,
+          ),
+          const SizedBox(height: 20),
+          _buildSectionLabel(
+              'Hospital / Clinic', Icons.business_rounded),
+          const SizedBox(height: 10),
+          _buildTextField(
+            controller: _hospitalController,
+            hint: 'e.g. Apollo Hospital, Hyderabad',
+            icon: Icons.business_outlined,
+            validator: (v) => (v == null || v.trim().isEmpty)
+                ? 'Please enter hospital name'
+                : null,
+          ),
+          const SizedBox(height: 20),
+          _buildSectionLabel('Visit Date', Icons.calendar_today_rounded),
+          const SizedBox(height: 10),
+          _buildDatePicker('Date of your visit'),
+          const SizedBox(height: 20),
+          _buildSectionLabel('Report Title', Icons.description_rounded),
+          const SizedBox(height: 10),
+          _buildTextField(
+            controller: _titleController,
+            hint: 'e.g. ECG Report, Blood Test',
+            icon: Icons.description_outlined,
+            validator: (v) => (v == null || v.trim().isEmpty)
+                ? 'Please enter report title'
+                : null,
+          ),
+          const SizedBox(height: 20),
+          _buildSectionLabel('Upload File', Icons.attach_file_rounded),
+          const SizedBox(height: 10),
+          _buildDropZone(),
+          const SizedBox(height: 14),
+          _buildAiNote(),
+        ],
+      ),
+    );
+  }
+
+  // ── Add to Existing Visit Form ───────────────────────────────────────────────
+  Widget _buildExistingVisitForm() {
+    return Form(
+      key: _existingFormKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionLabel(
+              'Select Existing Episode', Icons.history_rounded),
+          const SizedBox(height: 12),
+          // Episode list
+          ..._existingEpisodes.map((ep) => _buildEpisodeSelectItem(ep)),
+          const SizedBox(height: 20),
+          _buildSectionLabel('Report Title', Icons.description_rounded),
+          const SizedBox(height: 10),
+          _buildTextField(
+            controller: _titleController,
+            hint: 'e.g. Follow-up Blood Test',
+            icon: Icons.description_outlined,
+            validator: (v) => (v == null || v.trim().isEmpty)
+                ? 'Please enter report title'
+                : null,
+          ),
+          const SizedBox(height: 20),
+          _buildSectionLabel('Upload File', Icons.attach_file_rounded),
+          const SizedBox(height: 10),
+          _buildDropZone(),
+          const SizedBox(height: 14),
+          _buildAiNote(),
+        ],
+      ),
+    );
+  }
+
+  // ── Direct Upload Form ───────────────────────────────────────────────────────
+  Widget _buildDirectUploadForm() {
+    return Form(
+      key: _directFormKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionLabel('Report Name', Icons.description_rounded),
+          const SizedBox(height: 10),
+          _buildTextField(
+            controller: _reportNameController,
+            hint: 'e.g. Blood Test, Thyroid Report',
+            icon: Icons.description_outlined,
+            validator: (v) => (v == null || v.trim().isEmpty)
+                ? 'Please enter report name'
+                : null,
+          ),
+          const SizedBox(height: 20),
+          _buildSectionLabel(
+              'Date on Report', Icons.calendar_today_rounded),
+          const SizedBox(height: 10),
+          _buildDatePicker('Date printed on the report'),
+          const SizedBox(height: 20),
+          _buildSectionLabel('Upload File', Icons.attach_file_rounded),
+          const SizedBox(height: 10),
+          _buildDropZone(),
+          const SizedBox(height: 14),
+          _buildAiNote(),
+        ],
+      ),
+    );
+  }
+
+  // ── Episode select item ──────────────────────────────────────────────────────
+  Widget _buildEpisodeSelectItem(Map<String, dynamic> ep) {
+    final isSelected = _selectedEpisodeId == ep['id'];
+    final color = ep['color'] as Color;
+    final lightColor = ep['lightColor'] as Color;
+
+    return GestureDetector(
+      onTap: () => setState(() => _selectedEpisodeId = ep['id']),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: isSelected ? _lightBlue : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected
+                ? _blue
+                : Colors.grey.withValues(alpha: 0.2),
+            width: isSelected ? 2 : 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 6,
+                offset: const Offset(0, 2)),
+          ],
+        ),
+        child: Row(
+          children: [
+            // Dept icon
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: lightColor,
+                shape: BoxShape.circle,
               ),
-              boxShadow: isSelected
-                  ? [BoxShadow(
-                  color: color.withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 3))]
-                  : [BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2))],
+              child: Center(
+                child: Icon(ep['icon'] as IconData,
+                    color: color, size: 18),
+              ),
             ),
-            child: Row(
-              children: [
-                Icon(ft['icon'] as IconData,
-                    color: isSelected ? Colors.white : color, size: 20),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(ft['label'] as String,
-                      style: TextStyle(
-                          color: isSelected ? Colors.white : _darkText,
+            const SizedBox(width: 12),
+            // Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(ep['doctor'] as String,
+                      style: const TextStyle(
                           fontSize: 13,
-                          fontWeight: FontWeight.w600)),
-                ),
-                if (isSelected)
-                  const Icon(Icons.check_circle_rounded,
-                      color: Colors.white, size: 16),
-              ],
+                          fontWeight: FontWeight.bold,
+                          color: _darkText)),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${ep['hospital']} · ${ep['date']}',
+                    style: TextStyle(
+                        fontSize: 11, color: Colors.grey.shade500),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: lightColor,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(ep['department'] as String,
+                        style: TextStyle(
+                            color: color,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600)),
+                  ),
+                ],
+              ),
             ),
-          ),
-        );
-      }).toList(),
+            // Radio indicator
+            Container(
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected ? _blue : Colors.grey.shade300,
+                  width: 2,
+                ),
+              ),
+              child: isSelected
+                  ? Center(
+                child: Container(
+                  width: 10,
+                  height: 10,
+                  decoration: const BoxDecoration(
+                    color: _blue,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              )
+                  : null,
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  // ── Department grid ──────────────────────────────────────────────────────────
-  Widget _buildDeptGrid() {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: _departments.map((dept) {
-        final isSelected = _selectedDept == dept['name'];
-        final color = dept['color'] as Color;
-        final light = dept['light'] as Color;
-        return GestureDetector(
-          onTap: () => setState(() => _selectedDept = dept['name'] as String),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-            decoration: BoxDecoration(
-              color: isSelected ? color : light,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isSelected ? color : color.withValues(alpha: 0.3),
-                width: isSelected ? 2 : 1,
-              ),
-              boxShadow: isSelected
-                  ? [BoxShadow(
-                  color: color.withValues(alpha: 0.25),
-                  blurRadius: 6,
-                  offset: const Offset(0, 3))]
-                  : [],
+  // ── Drop zone ────────────────────────────────────────────────────────────────
+  Widget _buildDropZone() {
+    return GestureDetector(
+      onTap: _pickFile,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        decoration: BoxDecoration(
+          color: _uploadedFileName != null
+              ? const Color(0xFFE8F5E9)
+              : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: _uploadedFileName != null
+                ? const Color(0xFF2E7D32)
+                : _blue.withValues(alpha: 0.4),
+            width: 1.5,
+            style: _uploadedFileName != null
+                ? BorderStyle.solid
+                : BorderStyle.solid,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              _uploadedFileName != null
+                  ? Icons.check_circle_rounded
+                  : Icons.attach_file_rounded,
+              color: _uploadedFileName != null
+                  ? const Color(0xFF2E7D32)
+                  : _blue,
+              size: 32,
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(dept['icon'] as IconData,
-                    color: isSelected ? Colors.white : color, size: 15),
-                const SizedBox(width: 6),
-                Text(dept['name'] as String,
+            const SizedBox(height: 8),
+            Text(
+              _uploadedFileName != null
+                  ? 'File selected!'
+                  : 'Tap to upload file',
+              style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: _uploadedFileName != null
+                      ? const Color(0xFF2E7D32)
+                      : _blue),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              _uploadedFileName != null
+                  ? _uploadedFileName!.length > 30
+                  ? '${_uploadedFileName!.substring(0, 30)}...'
+                  : _uploadedFileName!
+                  : 'PDF, JPG, PNG supported',
+              style: TextStyle(
+                  fontSize: 11,
+                  color: _uploadedFileName != null
+                      ? const Color(0xFF2E7D32)
+                      : Colors.grey.shade400),
+            ),
+            if (_uploadedFileName != null) ...[
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: () => setState(() => _uploadedFileName = null),
+                child: const Text('Remove',
                     style: TextStyle(
-                        color: isSelected ? Colors.white : color,
-                        fontSize: 13,
+                        color: Color(0xFFE53935),
+                        fontSize: 12,
                         fontWeight: FontWeight.w600)),
-              ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── AI note ──────────────────────────────────────────────────────────────────
+  Widget _buildAiNote() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE8F5E9),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+            color: const Color(0xFFA5D6A7), width: 0.8),
+      ),
+      child: const Row(
+        children: [
+          Icon(Icons.psychology_rounded,
+              size: 16, color: Color(0xFF2E7D32)),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'AI will auto-detect the department from your report',
+              style: TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF2E7D32),
+                  fontWeight: FontWeight.w500),
             ),
           ),
-        );
-      }).toList(),
+        ],
+      ),
     );
   }
 
   // ── Date picker tile ─────────────────────────────────────────────────────────
-  Widget _buildDatePicker() {
+  Widget _buildDatePicker(String hint) {
     return GestureDetector(
       onTap: _pickDate,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        padding: const EdgeInsets.symmetric(
+            horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
           color: const Color(0xFFF5F8FF),
           borderRadius: BorderRadius.circular(12),
@@ -707,14 +930,14 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
         ),
         child: Row(
           children: [
-            Icon(Icons.calendar_today_rounded,
+            const Icon(Icons.calendar_today_rounded,
                 color: _blue, size: 20),
             const SizedBox(width: 14),
             Expanded(
               child: Text(
                 _selectedDate != null
                     ? _formatDate(_selectedDate!)
-                    : 'Select record date',
+                    : hint,
                 style: TextStyle(
                     color: _selectedDate != null
                         ? _darkText
@@ -738,6 +961,21 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
     );
   }
 
+  // ── Section label ────────────────────────────────────────────────────────────
+  Widget _buildSectionLabel(String text, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, color: _blue, size: 16),
+        const SizedBox(width: 8),
+        Text(text,
+            style: const TextStyle(
+                color: _darkText,
+                fontSize: 15,
+                fontWeight: FontWeight.bold)),
+      ],
+    );
+  }
+
   // ── Text field ───────────────────────────────────────────────────────────────
   Widget _buildTextField({
     required TextEditingController controller,
@@ -753,7 +991,8 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
       style: const TextStyle(color: _darkText, fontSize: 15),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+        hintStyle: TextStyle(
+            color: Colors.grey.shade400, fontSize: 14),
         prefixIcon: Icon(icon, color: _blue, size: 20),
         filled: true,
         fillColor: const Color(0xFFF5F8FF),
@@ -817,7 +1056,8 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
             SizedBox(width: 14),
             Text('Uploading...',
                 style: TextStyle(
-                    fontSize: 16, fontWeight: FontWeight.bold)),
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold)),
           ],
         )
             : const Row(
@@ -827,7 +1067,8 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
             SizedBox(width: 10),
             Text('Upload Record',
                 style: TextStyle(
-                    fontSize: 16, fontWeight: FontWeight.bold)),
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold)),
           ],
         ),
       ),

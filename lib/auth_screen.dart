@@ -182,7 +182,19 @@ class AuthScreen extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const EmergencyInfoScreen(),
+                          // builder: (_) => const EmergencyInfoScreen(),
+                          builder: (_) => const EmergencyInfoScreen(
+                            name: 'Rahul Sharma',
+                            age: '25',
+                            gender: 'Male',
+                            bloodGroup: 'B+',
+                            allergies: 'Penicillin, Dust',
+                            conditions: 'Hypertension',
+                            medications: 'Amlodipine 5mg',
+                            surgeries: '',
+                            emergencyContactName: 'Suresh Sharma',
+                            emergencyContactPhone: '9123456789',
+                          ),
                         ),
                       );
                     },

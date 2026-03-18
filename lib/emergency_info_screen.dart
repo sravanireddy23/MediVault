@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class EmergencyInfoScreen extends StatefulWidget {
+class EmergencyInfoScreen extends StatelessWidget {
   final String name;
   final String age;
   final String gender;
@@ -27,39 +27,12 @@ class EmergencyInfoScreen extends StatefulWidget {
     this.emergencyContactPhone = '',
   });
 
-  @override
-  State<EmergencyInfoScreen> createState() => _EmergencyInfoScreenState();
-}
-
-class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
-
   static const _blue      = Color(0xFF1565C0);
   static const _blueLight = Color(0xFF1E88E5);
   static const _lightBlue = Color(0xFFE3F2FD);
   static const _red       = Color(0xFFE53935);
   static const _softRed   = Color(0xFFFFEBEE);
   static const _darkText  = Color(0xFF1A1A2E);
-
-  @override
-  void initState() {
-    super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    )..repeat(reverse: true);
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.08).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _pulseController.dispose();
-    super.dispose();
-  }
 
   List<String> _split(String value) {
     if (value.trim().isEmpty) return ['None recorded'];
@@ -91,7 +64,7 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
-          _appBar(),
+          _appBar(context),
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 20, 16, 48),
@@ -109,7 +82,7 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
                     icon: Icons.monitor_heart_rounded,
                     iconColor: _blue,
                     bgColor: _lightBlue,
-                    items: _split(widget.conditions),
+                    items: _split(conditions),
                   ),
                   const SizedBox(height: 16),
                   _infoCard(
@@ -117,7 +90,7 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
                     icon: Icons.medication_rounded,
                     iconColor: const Color(0xFF1976D2),
                     bgColor: const Color(0xFFE8F4FD),
-                    items: _split(widget.medications),
+                    items: _split(medications),
                   ),
                   const SizedBox(height: 16),
                   _infoCard(
@@ -125,10 +98,10 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
                     icon: Icons.local_hospital_rounded,
                     iconColor: const Color(0xFF0D47A1),
                     bgColor: const Color(0xFFE0EAFF),
-                    items: _split(widget.surgeries),
+                    items: _split(surgeries),
                   ),
                   const SizedBox(height: 16),
-                  _contactCard(),
+                  _contactCard(context),
                   const SizedBox(height: 20),
                   _disclaimer(),
                 ],
@@ -140,7 +113,8 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
     );
   }
 
-  Widget _appBar() {
+  // ── App Bar ──────────────────────────────────────────────────────────────────
+  Widget _appBar(BuildContext context) {
     return SliverAppBar(
       pinned: true,
       elevation: 0,
@@ -161,44 +135,19 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
             color: Colors.white, size: 20),
         onPressed: () => Navigator.pop(context),
       ),
-      title: const Text('Emergency Info',
-          style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-              letterSpacing: 0.3)),
+      title: const Text(
+        'Emergency Info',
+        style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            letterSpacing: 0.3),
+      ),
       centerTitle: true,
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 14),
-          child: ScaleTransition(
-            scale: _pulseAnimation,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.5), width: 1),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.lock_open_rounded, color: Colors.white, size: 13),
-                  SizedBox(width: 4),
-                  Text('No Login',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold)),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 
+  // ── Patient Card ─────────────────────────────────────────────────────────────
   Widget _patientCard() {
     return Container(
       padding: const EdgeInsets.all(18),
@@ -229,7 +178,7 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
             ),
             child: Center(
               child: Text(
-                widget.name.isNotEmpty ? widget.name[0].toUpperCase() : 'U',
+                name.isNotEmpty ? name[0].toUpperCase() : 'U',
                 style: const TextStyle(
                     color: Colors.white,
                     fontSize: 26,
@@ -242,17 +191,19 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(widget.name,
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 19,
-                        fontWeight: FontWeight.bold)),
+                Text(
+                  name,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 19,
+                      fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
                   children: [
-                    _pill(Icons.cake_rounded, 'Age ${widget.age}'),
-                    _pill(_genderIcon(widget.gender), widget.gender),
+                    _pill(Icons.cake_rounded, 'Age $age'),
+                    _pill(_genderIcon(gender), gender),
                   ],
                 ),
               ],
@@ -261,7 +212,8 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-                color: _red.withValues(alpha: 0.25), shape: BoxShape.circle),
+                color: _red.withValues(alpha: 0.25),
+                shape: BoxShape.circle),
             child: const Icon(Icons.emergency_rounded,
                 color: Colors.white, size: 22),
           ),
@@ -282,18 +234,21 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
         children: [
           Icon(icon, color: Colors.white70, size: 12),
           const SizedBox(width: 4),
-          Text(label,
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500)),
+          Text(
+            label,
+            style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w500),
+          ),
         ],
       ),
     );
   }
 
+  // ── Blood Group Card ─────────────────────────────────────────────────────────
   Widget _bloodGroupCard() {
-    final bg = widget.bloodGroup.trim().isEmpty ? 'N/A' : widget.bloodGroup.trim();
+    final bg = bloodGroup.trim().isEmpty ? 'N/A' : bloodGroup.trim();
 
     return Container(
       width: double.infinity,
@@ -316,7 +271,6 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
       ),
       child: Row(
         children: [
-          // Icon + label
           Expanded(
             child: Row(
               children: [
@@ -332,24 +286,26 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
                 const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Blood Group',
-                        style: TextStyle(
-                            color: _darkText,
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold)),
+                    Text(
+                      'Blood Group',
+                      style: TextStyle(
+                          color: _darkText,
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold),
+                    ),
                     SizedBox(height: 3),
-                    Text('Patient blood type',
-                        style:
-                        TextStyle(color: Colors.grey, fontSize: 12)),
+                    Text(
+                      'Patient blood type',
+                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
                   ],
                 ),
               ],
             ),
           ),
-          // Big value box
           Container(
-            padding:
-            const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+            padding: const EdgeInsets.symmetric(
+                horizontal: 22, vertical: 14),
             decoration: BoxDecoration(
               color: _softRed,
               borderRadius: BorderRadius.circular(12),
@@ -369,8 +325,9 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
     );
   }
 
+  // ── Allergies Card ───────────────────────────────────────────────────────────
   Widget _allergiesCard() {
-    final items = _split(widget.allergies);
+    final items = _split(allergies);
     final hasAllergies =
     !(items.length == 1 && items[0] == 'None recorded');
 
@@ -380,7 +337,9 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: hasAllergies ? _red.withValues(alpha: 0.35) : _lightBlue,
+          color: hasAllergies
+              ? _red.withValues(alpha: 0.35)
+              : _lightBlue,
           width: 1.5,
         ),
         boxShadow: [
@@ -404,28 +363,32 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
                     color: hasAllergies ? _red : _blue, size: 18),
               ),
               const SizedBox(width: 10),
-              Text('Allergies',
-                  style: TextStyle(
-                      color: hasAllergies ? _red : _darkText,
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold)),
+              Text(
+                'Allergies',
+                style: TextStyle(
+                    color: hasAllergies ? _red : _darkText,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold),
+              ),
               if (hasAllergies) ...[
                 const SizedBox(width: 8),
                 Container(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 7, vertical: 2),
                   decoration: BoxDecoration(
                     color: _red.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
-                    border:
-                    Border.all(color: _red.withValues(alpha: 0.4)),
+                    border: Border.all(
+                        color: _red.withValues(alpha: 0.4)),
                   ),
-                  child: const Text('CRITICAL',
-                      style: TextStyle(
-                          color: _red,
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1)),
+                  child: const Text(
+                    'CRITICAL',
+                    style: TextStyle(
+                        color: _red,
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1),
+                  ),
                 ),
               ],
             ],
@@ -437,8 +400,8 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
             children: items.map((item) {
               final isNone = item == 'None recorded';
               return Container(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 7),
                 decoration: BoxDecoration(
                   color: isNone ? _lightBlue : _softRed,
                   borderRadius: BorderRadius.circular(20),
@@ -449,11 +412,13 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
                     width: 1.2,
                   ),
                 ),
-                child: Text(item,
-                    style: TextStyle(
-                        color: isNone ? _blue : _red,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600)),
+                child: Text(
+                  item,
+                  style: TextStyle(
+                      color: isNone ? _blue : _red,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600),
+                ),
               );
             }).toList(),
           ),
@@ -462,6 +427,7 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
     );
   }
 
+  // ── Info Card ────────────────────────────────────────────────────────────────
   Widget _infoCard({
     required String title,
     required IconData icon,
@@ -494,11 +460,13 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
                 child: Icon(icon, color: iconColor, size: 18),
               ),
               const SizedBox(width: 10),
-              Text(title,
-                  style: const TextStyle(
-                      color: _darkText,
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold)),
+              Text(
+                title,
+                style: const TextStyle(
+                    color: _darkText,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold),
+              ),
             ],
           ),
           const SizedBox(height: 14),
@@ -517,11 +485,13 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: Text(item,
-                        style: const TextStyle(
-                            color: _darkText,
-                            fontSize: 14,
-                            height: 1.4)),
+                    child: Text(
+                      item,
+                      style: const TextStyle(
+                          color: _darkText,
+                          fontSize: 14,
+                          height: 1.4),
+                    ),
                   ),
                 ],
               ),
@@ -532,14 +502,15 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
     );
   }
 
-  Widget _contactCard() {
-    final contactName = widget.emergencyContactName.trim().isEmpty
+  // ── Contact Card ─────────────────────────────────────────────────────────────
+  Widget _contactCard(BuildContext context) {
+    final contactName = emergencyContactName.trim().isEmpty
         ? 'Not provided'
-        : widget.emergencyContactName.trim();
-    final contactPhone = widget.emergencyContactPhone.trim().isEmpty
+        : emergencyContactName.trim();
+    final contactPhone = emergencyContactPhone.trim().isEmpty
         ? 'Not provided'
-        : widget.emergencyContactPhone.trim();
-    final canCall = widget.emergencyContactPhone.trim().isNotEmpty;
+        : emergencyContactPhone.trim();
+    final canCall = emergencyContactPhone.trim().isNotEmpty;
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -562,20 +533,22 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Tag
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            padding: const EdgeInsets.symmetric(
+                horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
-                color: _softRed, borderRadius: BorderRadius.circular(6)),
-            child: const Text('EMERGENCY CONTACT',
-                style: TextStyle(
-                    color: _red,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.2)),
+                color: _softRed,
+                borderRadius: BorderRadius.circular(6)),
+            child: const Text(
+              'EMERGENCY CONTACT',
+              style: TextStyle(
+                  color: _red,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2),
+            ),
           ),
           const SizedBox(height: 18),
-
           // Name row
           Row(
             children: [
@@ -584,56 +557,63 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
                 decoration: BoxDecoration(
                     color: _lightBlue,
                     borderRadius: BorderRadius.circular(10)),
-                child:
-                const Icon(Icons.person_rounded, color: _blue, size: 22),
+                child: const Icon(Icons.person_rounded,
+                    color: _blue, size: 22),
               ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Contact Name',
-                        style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500)),
+                    const Text(
+                      'Contact Name',
+                      style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500),
+                    ),
                     const SizedBox(height: 3),
-                    Text(contactName,
-                        style: const TextStyle(
-                            color: _darkText,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold)),
+                    Text(
+                      contactName,
+                      style: const TextStyle(
+                          color: _darkText,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold),
+                    ),
                   ],
                 ),
               ),
             ],
           ),
-
           const SizedBox(height: 14),
           Container(height: 1, color: _lightBlue),
           const SizedBox(height: 14),
-
           // Phone row
           Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                    color: canCall ? _lightBlue : Colors.grey.shade100,
+                    color: canCall
+                        ? _lightBlue
+                        : Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(10)),
                 child: Icon(Icons.phone_rounded,
-                    color: canCall ? _blue : Colors.grey, size: 22),
+                    color: canCall ? _blue : Colors.grey,
+                    size: 22),
               ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Phone Number',
-                        style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500)),
+                    const Text(
+                      'Phone Number',
+                      style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500),
+                    ),
                     const SizedBox(height: 3),
                     Text(
                       contactPhone,
@@ -648,7 +628,7 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
               ),
               if (canCall)
                 GestureDetector(
-                  onTap: () => _call(widget.emergencyContactPhone),
+                  onTap: () => _call(emergencyContactPhone),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 10),
@@ -667,11 +647,13 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
                         Icon(Icons.call_rounded,
                             color: Colors.white, size: 18),
                         SizedBox(width: 6),
-                        Text('Call',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14)),
+                        Text(
+                          'Call',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14),
+                        ),
                       ],
                     ),
                   ),
@@ -683,6 +665,7 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
     );
   }
 
+  // ── Disclaimer ───────────────────────────────────────────────────────────────
   Widget _disclaimer() {
     return Container(
       padding: const EdgeInsets.all(14),
@@ -702,7 +685,9 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
               'This information is provided for emergency use only. '
                   'Always consult a licensed medical professional for diagnosis and treatment.',
               style: TextStyle(
-                  color: Colors.grey.shade500, fontSize: 12, height: 1.5),
+                  color: Colors.grey.shade500,
+                  fontSize: 12,
+                  height: 1.5),
             ),
           ),
         ],
