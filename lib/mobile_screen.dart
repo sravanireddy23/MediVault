@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'otp_screen.dart';
 
 class MobileScreen extends StatefulWidget {
@@ -35,6 +36,7 @@ class MobileScreen extends StatefulWidget {
 class _MobileScreenState extends State<MobileScreen> {
   final _formKey = GlobalKey<FormState>();
   final _mobileController = TextEditingController();
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -42,27 +44,62 @@ class _MobileScreenState extends State<MobileScreen> {
     super.dispose();
   }
 
-  void _sendOtp() {
-    if (_formKey.currentState!.validate()) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => OtpScreen(
-            mobileNumber: _mobileController.text.trim(),
-            userName: widget.userName,
-            age: widget.age,
-            gender: widget.gender,
-            bloodGroup: widget.bloodGroup,
-            allergies: widget.allergies,
-            conditions: widget.conditions,
-            medications: widget.medications,
-            surgeries: widget.surgeries,
-            emergencyContactName: widget.emergencyContactName,
-            emergencyContactPhone: widget.emergencyContactPhone,
+  void _sendOtp() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    final phoneNumber = '+91${_mobileController.text.trim()}';
+
+    await FirebaseAuth.instance.verifyPhoneNumber(
+      phoneNumber: phoneNumber,
+      timeout: const Duration(seconds: 60),
+
+      // OTP sent successfully → navigate to OtpScreen
+      codeSent: (String verificationId, int? resendToken) {
+        setState(() => _isLoading = false);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => OtpScreen(
+              mobileNumber: _mobileController.text.trim(),
+              verificationId: verificationId,
+              userName: widget.userName,
+              age: widget.age,
+              gender: widget.gender,
+              bloodGroup: widget.bloodGroup,
+              allergies: widget.allergies,
+              conditions: widget.conditions,
+              medications: widget.medications,
+              surgeries: widget.surgeries,
+              emergencyContactName: widget.emergencyContactName,
+              emergencyContactPhone: widget.emergencyContactPhone,
+            ),
           ),
-        ),
-      );
-    }
+        );
+      },
+
+      // Auto-retrieval on some Android devices (no OTP needed)
+      verificationCompleted: (PhoneAuthCredential credential) async {
+        await FirebaseAuth.instance.signInWithCredential(credential);
+      },
+
+      // Something went wrong
+      verificationFailed: (FirebaseAuthException e) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message ?? 'Verification failed. Try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      },
+
+      // Timeout
+      codeAutoRetrievalTimeout: (String verificationId) {
+        setState(() => _isLoading = false);
+      },
+    );
   }
 
   @override
@@ -87,7 +124,6 @@ class _MobileScreenState extends State<MobileScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
-
               Text(
                 isNewUser ? 'Hi, ${widget.userName}!' : 'Hi, Welcome Back!',
                 style: const TextStyle(
@@ -108,9 +144,7 @@ class _MobileScreenState extends State<MobileScreen> {
                   height: 1.5,
                 ),
               ),
-
               const SizedBox(height: 40),
-
               Center(
                 child: Container(
                   width: 100,
@@ -127,9 +161,7 @@ class _MobileScreenState extends State<MobileScreen> {
                       color: Color(0xFF1565C0), size: 50),
                 ),
               ),
-
               const SizedBox(height: 40),
-
               const Text(
                 'Mobile Number',
                 style: TextStyle(
@@ -143,7 +175,6 @@ class _MobileScreenState extends State<MobileScreen> {
                 controller: _mobileController,
                 keyboardType: TextInputType.phone,
                 maxLength: 10,
-                // ── Only allows digits 0-9, blocks letters & symbols ──
                 inputFormatters: [
                   FilteringTextInputFormatter.digitsOnly,
                   LengthLimitingTextInputFormatter(10),
@@ -184,7 +215,7 @@ class _MobileScreenState extends State<MobileScreen> {
                     ),
                   ),
                   prefixIconConstraints:
-                      const BoxConstraints(minWidth: 0, minHeight: 0),
+                  const BoxConstraints(minWidth: 0, minHeight: 0),
                   filled: true,
                   fillColor: const Color(0xFFF5F8FF),
                   counterText: '',
@@ -193,19 +224,17 @@ class _MobileScreenState extends State<MobileScreen> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
-                        color:
-                            const Color(0xFF1565C0).withValues(alpha: 0.3)),
+                        color: const Color(0xFF1565C0).withValues(alpha: 0.3)),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
-                        color:
-                            const Color(0xFF1565C0).withValues(alpha: 0.3)),
+                        color: const Color(0xFF1565C0).withValues(alpha: 0.3)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                        color: Color(0xFF1565C0), width: 2),
+                    borderSide:
+                    const BorderSide(color: Color(0xFF1565C0), width: 2),
                   ),
                   errorBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -214,24 +243,20 @@ class _MobileScreenState extends State<MobileScreen> {
                   focusedErrorBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide:
-                        const BorderSide(color: Colors.red, width: 2),
+                    const BorderSide(color: Colors.red, width: 2),
                   ),
                 ),
               ),
-
               const SizedBox(height: 12),
               Text(
                 'We will send a 6-digit OTP to verify your number.',
-                style:
-                    TextStyle(color: Colors.grey.shade400, fontSize: 13),
+                style: TextStyle(color: Colors.grey.shade400, fontSize: 13),
               ),
-
               const SizedBox(height: 40),
-
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _sendOtp,
+                  onPressed: _isLoading ? null : _sendOtp,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1565C0),
                     foregroundColor: Colors.white,
@@ -241,7 +266,16 @@ class _MobileScreenState extends State<MobileScreen> {
                     ),
                     elevation: 0,
                   ),
-                  child: const Row(
+                  child: _isLoading
+                      ? const SizedBox(
+                    height: 22,
+                    width: 22,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2.5,
+                    ),
+                  )
+                      : const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
