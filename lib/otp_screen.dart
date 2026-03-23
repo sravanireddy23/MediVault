@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -116,7 +117,34 @@ class _OtpScreenState extends State<OtpScreen> {
       );
 
       // Sign in with the credential
+      final userCredential =
       await FirebaseAuth.instance.signInWithCredential(credential);
+
+      final user = userCredential.user;
+
+      if (user != null) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .set({
+          'phone': user.phoneNumber,
+          'name': widget.userName ?? 'User',
+          'age': widget.age ?? '',
+          'gender': widget.gender ?? '',
+          'bloodGroup': widget.bloodGroup ?? '',
+          'allergies': widget.allergies ?? '',
+          'conditions': widget.conditions ?? '',
+          'medications': widget.medications ?? '',
+          'surgeries': widget.surgeries ?? '',
+          'emergencyContactName': widget.emergencyContactName ?? '',
+          'emergencyContactPhone': widget.emergencyContactPhone ?? '',
+          'createdAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+      }
+
+      setState(() {
+        _isLoading = false;
+      });
 
       // Navigate to HomeDashboard on success
       if (mounted) {
@@ -176,9 +204,57 @@ class _OtpScreenState extends State<OtpScreen> {
           ),
         );
       },
-      verificationCompleted: (PhoneAuthCredential credential) async {
-        await FirebaseAuth.instance.signInWithCredential(credential);
-      },
+        verificationCompleted: (PhoneAuthCredential credential) async {
+          final userCredential =
+          await FirebaseAuth.instance.signInWithCredential(credential);
+
+          final user = userCredential.user;
+
+          if (user != null) {
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(user.uid)
+                .set({
+              'phone': user.phoneNumber,
+              'name': widget.userName ?? 'User',
+              'age': widget.age ?? '',
+              'gender': widget.gender ?? '',
+              'bloodGroup': widget.bloodGroup ?? '',
+              'allergies': widget.allergies ?? '',
+              'conditions': widget.conditions ?? '',
+              'medications': widget.medications ?? '',
+              'surgeries': widget.surgeries ?? '',
+              'emergencyContactName': widget.emergencyContactName ?? '',
+              'emergencyContactPhone': widget.emergencyContactPhone ?? '',
+              'createdAt': FieldValue.serverTimestamp(),
+            }, SetOptions(merge: true));
+          }
+
+          setState(() {
+            _isLoading = false;
+          });
+
+          if (mounted) {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(
+                builder: (context) => HomeDashboard(
+                  userName: widget.userName ?? 'User',
+                  age: widget.age ?? '—',
+                  gender: widget.gender ?? '—',
+                  bloodGroup: widget.bloodGroup ?? '—',
+                  allergies: widget.allergies ?? '',
+                  conditions: widget.conditions ?? '',
+                  medications: widget.medications ?? '',
+                  surgeries: widget.surgeries ?? '',
+                  emergencyContactName: widget.emergencyContactName ?? '',
+                  emergencyContactPhone: widget.emergencyContactPhone ?? '',
+                ),
+              ),
+                  (route) => false,
+            );
+          }
+        },
       verificationFailed: (FirebaseAuthException e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
