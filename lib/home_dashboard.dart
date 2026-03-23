@@ -89,7 +89,7 @@ class _HomeDashboardState extends State<HomeDashboard>
     },
   ];
 
-  // ── Static health news (will be replaced by NewsAPI later) ───────────────────
+  // ── Static health news ───────────────────────────────────────────────────────
   final List<Map<String, dynamic>> _healthArticles = [
     {
       'title': 'Walking 10,000 Steps Daily Reduces Heart Disease Risk by 30%',
@@ -192,7 +192,6 @@ class _HomeDashboardState extends State<HomeDashboard>
     );
   }
 
-  // ── Current month name ───────────────────────────────────────────────────────
   String get _currentMonth {
     const months = [
       'January', 'February', 'March', 'April',
@@ -286,7 +285,6 @@ class _HomeDashboardState extends State<HomeDashboard>
                   ),
                   Row(
                     children: [
-                      // Blood group pill
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 6),
@@ -312,7 +310,6 @@ class _HomeDashboardState extends State<HomeDashboard>
                         ),
                       ),
                       const SizedBox(width: 10),
-                      // Settings icon
                       GestureDetector(
                         onTap: _openSettings,
                         child: Container(
@@ -563,8 +560,7 @@ class _HomeDashboardState extends State<HomeDashboard>
                 onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (_) =>
-                        const MedicalRecordsScreen())),
+                        builder: (_) => const MedicalRecordsScreen())),
                 child: const Text(
                   'See all',
                   style: TextStyle(
@@ -590,7 +586,6 @@ class _HomeDashboardState extends State<HomeDashboard>
     );
   }
 
-  // ── Record Card ──────────────────────────────────────────────────────────────
   Widget _buildRecordCard(Map<String, dynamic> r) {
     final color    = r['color'] as Color;
     final fileType = r['fileType'] as String;
@@ -758,14 +753,12 @@ class _HomeDashboardState extends State<HomeDashboard>
             ],
           ),
           const SizedBox(height: 12),
-          ..._healthArticles.map((article) =>
-              _buildArticleCard(article)),
+          ..._healthArticles.map((article) => _buildArticleCard(article)),
         ],
       ),
     );
   }
 
-  // ── Article Card ─────────────────────────────────────────────────────────────
   Widget _buildArticleCard(Map<String, dynamic> article) {
     final color      = article['color'] as Color;
     final lightColor = article['lightColor'] as Color;
@@ -797,11 +790,8 @@ class _HomeDashboardState extends State<HomeDashboard>
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Center(
-                child: Icon(
-                  article['icon'] as IconData,
-                  color: color,
-                  size: 22,
-                ),
+                child: Icon(article['icon'] as IconData,
+                    color: color, size: 22),
               ),
             ),
             const SizedBox(width: 12),
@@ -841,8 +831,7 @@ class _HomeDashboardState extends State<HomeDashboard>
                       Text(
                         article['source'] as String,
                         style: TextStyle(
-                            color: Colors.grey.shade400,
-                            fontSize: 10),
+                            color: Colors.grey.shade400, fontSize: 10),
                       ),
                       const Spacer(),
                       Icon(Icons.access_time_rounded,
@@ -851,8 +840,7 @@ class _HomeDashboardState extends State<HomeDashboard>
                       Text(
                         article['readTime'] as String,
                         style: TextStyle(
-                            color: Colors.grey.shade400,
-                            fontSize: 10),
+                            color: Colors.grey.shade400, fontSize: 10),
                       ),
                     ],
                   ),
@@ -873,16 +861,15 @@ class _HomeDashboardState extends State<HomeDashboard>
       SnackBar(
         content: const Row(
           children: [
-            Icon(Icons.newspaper_rounded,
-                color: Colors.white, size: 16),
+            Icon(Icons.newspaper_rounded, color: Colors.white, size: 16),
             SizedBox(width: 8),
             Text('Full article — Coming soon with NewsAPI!'),
           ],
         ),
         backgroundColor: _blue,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10)),
+        shape:
+        RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         margin: const EdgeInsets.all(12),
       ),
     );
@@ -900,48 +887,28 @@ class _HomeDashboardState extends State<HomeDashboard>
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _navItem(0, Icons.home_rounded, 'Home',
-                onTap: () {}),
+            _navItem(0, Icons.home_rounded, 'Home', onTap: () {}),
             _navItem(1, Icons.folder_copy_rounded, 'Records',
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (_) =>
-                      const MedicalRecordsScreen()),
-                ).then((_) =>
-                    setState(() => _selectedIndex = 0))),
+                      builder: (_) => const MedicalRecordsScreen()),
+                ).then((_) => setState(() => _selectedIndex = 0))),
             const SizedBox(width: 48),
             _navItem(2, Icons.psychology_rounded, 'AI Chat',
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
                       builder: (_) => const AiChatScreen()),
-                ).then((_) =>
-                    setState(() => _selectedIndex = 0))),
+                ).then((_) => setState(() => _selectedIndex = 0))),
             _navItem(3, Icons.person_rounded, 'Profile',
                 onTap: () => Navigator.push(
                   context,
+                  // ✅ FIXED: ProfileScreen now takes no params
+                  // it fetches data directly from Firestore
                   MaterialPageRoute(
-                    builder: (_) => ProfileScreen(
-                      userName: widget.userName,
-                      age: widget.age,
-                      // ── dob and phone placeholder until Firebase ──
-                      dob: '—',
-                      phone: '—',
-                      gender: widget.gender,
-                      bloodGroup: widget.bloodGroup,
-                      allergies: widget.allergies,
-                      conditions: widget.conditions,
-                      medications: widget.medications,
-                      surgeries: widget.surgeries,
-                      emergencyContactName:
-                      widget.emergencyContactName,
-                      emergencyContactPhone:
-                      widget.emergencyContactPhone,
-                    ),
-                  ),
-                ).then((_) =>
-                    setState(() => _selectedIndex = 0))),
+                      builder: (_) => const ProfileScreen()),
+                ).then((_) => setState(() => _selectedIndex = 0))),
           ],
         ),
       ),
@@ -979,13 +946,11 @@ class _HomeDashboardState extends State<HomeDashboard>
     return FloatingActionButton(
       onPressed: () => Navigator.push(
           context,
-          MaterialPageRoute(
-              builder: (_) => const UploadRecordScreen())),
+          MaterialPageRoute(builder: (_) => const UploadRecordScreen())),
       backgroundColor: _blue,
       elevation: 4,
       shape: const CircleBorder(),
-      child: const Icon(Icons.add_rounded,
-          color: Colors.white, size: 28),
+      child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
     );
   }
 }

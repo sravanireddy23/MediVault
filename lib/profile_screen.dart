@@ -10,12 +10,11 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  static const _blue = Color(0xFF1565C0);
+  // ── Only used colors kept ────────────────────────────────────────────────────
+  static const _blue      = Color(0xFF1565C0);
   static const _blueLight = Color(0xFF1E88E5);
-  static const _lightBlue = Color(0xFFE3F2FD);
-  static const _lightBg = Color(0xFFF5F8FF);
-  static const _darkText = Color(0xFF1A1A2E);
-  static const _red = Color(0xFFD32F2F);
+  static const _lightBg   = Color(0xFFF5F8FF);
+  static const _darkText  = Color(0xFF1A1A2E);
 
   Future<Map<String, dynamic>?> getUserData() async {
     final user = FirebaseAuth.instance.currentUser;
@@ -27,15 +26,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         .get();
 
     return doc.data();
-  }
-
-  List<String> _split(String value) {
-    if (value.trim().isEmpty) return ['None recorded'];
-    return value
-        .split(RegExp(r'[,\n]'))
-        .map((e) => e.trim())
-        .where((e) => e.isNotEmpty)
-        .toList();
   }
 
   String _getInitials(String name) {
@@ -50,11 +40,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _lightBg,
-      body: FutureBuilder(
+      body: FutureBuilder<Map<String, dynamic>?>(
         future: getUserData(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
+          }
+
+          if (!snapshot.hasData || snapshot.data == null) {
+            return const Center(
+              child: Text(
+                'No profile data found.',
+                style: TextStyle(color: Colors.grey),
+              ),
+            );
           }
 
           final data = snapshot.data!;
@@ -97,6 +96,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // ── App Bar ──────────────────────────────────────────────────────────────────
   Widget _buildAppBar() {
     return SliverAppBar(
       expandedHeight: 60,
@@ -109,13 +109,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       title: const Text(
         'My Profile',
-        style: TextStyle(color: Colors.white),
+        style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 18),
       ),
     );
   }
 
+  // ── Profile Header ───────────────────────────────────────────────────────────
   Widget _buildProfileHeader(Map<String, dynamic> data) {
-    final name = data['name'] ?? 'User';
+    final name     = data['name'] ?? 'User';
     final initials = _getInitials(name);
 
     return Container(
@@ -142,70 +146,159 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 14),
           Text(
             name,
-            style: const TextStyle(color: Colors.white, fontSize: 22),
+            style: const TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Text(
-            "${data['age'] ?? '—'} yrs • ${data['gender'] ?? '—'} • ${data['bloodGroup'] ?? '—'}",
-            style: const TextStyle(color: Colors.white70),
+            "${data['age'] ?? '—'} yrs  •  ${data['gender'] ?? '—'}  •  ${data['bloodGroup'] ?? '—'}",
+            style: const TextStyle(color: Colors.white70, fontSize: 14),
           ),
         ],
       ),
     );
   }
 
+  // ── Personal Info ────────────────────────────────────────────────────────────
   Widget _buildPersonalInfo(Map<String, dynamic> data) {
     return Column(
       children: [
-        _infoTile("Full Name", data['name']),
-        _infoTile("Age", data['age']),
-        _infoTile("Gender", data['gender']),
-        _infoTile("Blood Group", data['bloodGroup']),
-        _infoTile("Phone", data['phone']),
+        _infoTile(Icons.person_rounded,      'Full Name',    data['name']),
+        _divider(),
+        _infoTile(Icons.cake_rounded,         'Age',          data['age']),
+        _divider(),
+        _infoTile(Icons.wc_rounded,           'Gender',       data['gender']),
+        _divider(),
+        _infoTile(Icons.bloodtype_rounded,    'Blood Group',  data['bloodGroup']),
+        _divider(),
+        _infoTile(Icons.phone_rounded,        'Phone',        data['phone']),
       ],
     );
   }
 
+  // ── Medical Summary ──────────────────────────────────────────────────────────
   Widget _buildMedicalSummary(Map<String, dynamic> data) {
     return Column(
       children: [
-        _infoTile("Allergies", data['allergies']),
-        _infoTile("Conditions", data['conditions']),
-        _infoTile("Medications", data['medications']),
-        _infoTile("Surgeries", data['surgeries']),
+        _infoTile(Icons.warning_rounded,      'Allergies',    data['allergies']),
+        _divider(),
+        _infoTile(Icons.monitor_heart_rounded,'Conditions',   data['conditions']),
+        _divider(),
+        _infoTile(Icons.medication_rounded,   'Medications',  data['medications']),
+        _divider(),
+        _infoTile(Icons.local_hospital_rounded,'Surgeries',   data['surgeries']),
       ],
     );
   }
 
+  // ── Emergency Contact ────────────────────────────────────────────────────────
   Widget _buildEmergencyContact(Map<String, dynamic> data) {
     return Column(
       children: [
-        _infoTile("Contact Name", data['emergencyContactName']),
-        _infoTile("Phone", data['emergencyContactPhone']),
+        _infoTile(Icons.person_rounded, 'Contact Name',  data['emergencyContactName']),
+        _divider(),
+        _infoTile(Icons.phone_rounded,  'Phone Number',  data['emergencyContactPhone']),
       ],
     );
   }
 
-  Widget _infoTile(String label, dynamic value) {
-    return ListTile(
-      title: Text(label),
-      subtitle: Text(value?.toString() ?? ''),
+  // ── Info Tile ────────────────────────────────────────────────────────────────
+  Widget _infoTile(IconData icon, String label, dynamic value) {
+    final displayValue = (value == null || value.toString().trim().isEmpty)
+        ? 'Not provided'
+        : value.toString();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE3F2FD),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: _blue, size: 16),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                      color: Colors.grey.shade500,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  displayValue,
+                  style: const TextStyle(
+                      color: _darkText,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
+  Widget _divider() => Divider(
+    height: 1,
+    thickness: 1,
+    color: Colors.grey.withValues(alpha: 0.1),
+    indent: 16,
+    endIndent: 16,
+  );
+
+  // ── Section Wrapper ──────────────────────────────────────────────────────────
   Widget _buildSection(String title, IconData icon, Widget content) {
     return Padding(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title,
-              style:
-              const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE3F2FD),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: _blue, size: 15),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                title,
+                style: const TextStyle(
+                    color: _darkText,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
           Container(
+            width: double.infinity,
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
             child: content,
           ),

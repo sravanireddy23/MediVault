@@ -6,7 +6,7 @@ import 'home_dashboard.dart';
 
 class OtpScreen extends StatefulWidget {
   final String mobileNumber;
-  final String verificationId; // NEW — passed from MobileScreen
+  final String verificationId;
   final String? userName;
   final String? age;
   final String? gender;
@@ -21,7 +21,7 @@ class OtpScreen extends StatefulWidget {
   const OtpScreen({
     super.key,
     required this.mobileNumber,
-    required this.verificationId, // NEW
+    required this.verificationId,
     this.userName,
     this.age,
     this.gender,
@@ -43,11 +43,14 @@ class _OtpScreenState extends State<OtpScreen> {
   List.generate(6, (_) => TextEditingController());
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
 
-  int _resendSeconds = 30;
-  bool _canResend = false;
-  bool _showError = false;
+  int _resendSeconds   = 30;
+  bool _canResend      = false;
+  bool _showError      = false;
   String _errorMessage = '';
-  bool _isLoading = false; // NEW
+  bool _isLoading      = false;
+
+  // ── true = Sign Up flow, false = Sign In flow ────────────────────────────────
+  bool get _isSignUp => widget.userName != null;
 
   @override
   void initState() {
@@ -76,16 +79,70 @@ class _OtpScreenState extends State<OtpScreen> {
 
   @override
   void dispose() {
-    for (var c in _controllers) c.dispose();
-    for (var f in _focusNodes) f.dispose();
+    for (var c in _controllers) { c.dispose(); }
+    for (var f in _focusNodes) { f.dispose(); }
     super.dispose();
   }
 
-  bool _isBoxEmpty(int index) {
-    return _showError && _controllers[index].text.isEmpty;
+  bool _isBoxEmpty(int index) =>
+      _showError && _controllers[index].text.isEmpty;
+
+  // ── Save user to Firestore (Sign Up only) ────────────────────────────────────
+  Future<void> _saveUserToFirestore(User user) async {
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .set({
+      'phone': user.phoneNumber,
+      'name': widget.userName ?? 'User',
+      'age': widget.age ?? '',
+      'gender': widget.gender ?? '',
+      'bloodGroup': widget.bloodGroup ?? '',
+      'allergies': widget.allergies ?? '',
+      'conditions': widget.conditions ?? '',
+      'medications': widget.medications ?? '',
+      'surgeries': widget.surgeries ?? '',
+      'emergencyContactName': widget.emergencyContactName ?? '',
+      'emergencyContactPhone': widget.emergencyContactPhone ?? '',
+      'createdAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
-  // ── Real Firebase OTP verification ──────────────────
+  // ── Navigate to Home with data ───────────────────────────────────────────────
+  void _goToHome({Map<String, dynamic>? firestoreData}) {
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (context) => HomeDashboard(
+          userName: firestoreData?['name'] ?? widget.userName ?? 'User',
+          age: firestoreData?['age'] ?? widget.age ?? '—',
+          gender: firestoreData?['gender'] ?? widget.gender ?? '—',
+          bloodGroup: firestoreData?['bloodGroup'] ?? widget.bloodGroup ?? '—',
+          allergies: firestoreData?['allergies'] ?? widget.allergies ?? '',
+          conditions: firestoreData?['conditions'] ?? widget.conditions ?? '',
+          medications: firestoreData?['medications'] ?? widget.medications ?? '',
+          surgeries: firestoreData?['surgeries'] ?? widget.surgeries ?? '',
+          emergencyContactName: firestoreData?['emergencyContactName'] ?? widget.emergencyContactName ?? '',
+          emergencyContactPhone: firestoreData?['emergencyContactPhone'] ?? widget.emergencyContactPhone ?? '',
+        ),
+      ),
+          (route) => false,
+    );
+  }
+
+  // ── Show error and clear OTP boxes ───────────────────────────────────────────
+  void _showOtpError(String message) {
+    setState(() {
+      _isLoading = false;
+      _showError = true;
+      _errorMessage = message;
+    });
+    for (var c in _controllers) { c.clear(); }
+    _focusNodes[0].requestFocus();
+  }
+
+  // ── Verify OTP ───────────────────────────────────────────────────────────────
   void _verifyOtp() async {
     final otp = _controllers.map((c) => c.text).join();
 
@@ -110,82 +167,55 @@ class _OtpScreenState extends State<OtpScreen> {
     });
 
     try {
-      // Create credential using verificationId + OTP entered by user
       final credential = PhoneAuthProvider.credential(
         verificationId: widget.verificationId,
         smsCode: otp,
       );
 
-      // Sign in with the credential
       final userCredential =
       await FirebaseAuth.instance.signInWithCredential(credential);
 
       final user = userCredential.user;
+      if (user == null) {
+        _showOtpError('Something went wrong. Please try again.');
+        return;
+      }
 
-      if (user != null) {
-        await FirebaseFirestore.instance
+      if (_isSignUp) {
+        // ── SIGN UP → save data to Firestore → go to Home ─────────────────────
+        await _saveUserToFirestore(user);
+        setState(() => _isLoading = false);
+        _goToHome();
+      } else {
+        // ── SIGN IN → check if user exists in Firestore ────────────────────────
+        final doc = await FirebaseFirestore.instance
             .collection('users')
             .doc(user.uid)
-            .set({
-          'phone': user.phoneNumber,
-          'name': widget.userName ?? 'User',
-          'age': widget.age ?? '',
-          'gender': widget.gender ?? '',
-          'bloodGroup': widget.bloodGroup ?? '',
-          'allergies': widget.allergies ?? '',
-          'conditions': widget.conditions ?? '',
-          'medications': widget.medications ?? '',
-          'surgeries': widget.surgeries ?? '',
-          'emergencyContactName': widget.emergencyContactName ?? '',
-          'emergencyContactPhone': widget.emergencyContactPhone ?? '',
-          'createdAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
-      }
+            .get();
 
-      setState(() {
-        _isLoading = false;
-      });
-
-      // Navigate to HomeDashboard on success
-      if (mounted) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (context) => HomeDashboard(
-              userName: widget.userName ?? 'User',
-              age: widget.age ?? '—',
-              gender: widget.gender ?? '—',
-              bloodGroup: widget.bloodGroup ?? '—',
-              allergies: widget.allergies ?? '',
-              conditions: widget.conditions ?? '',
-              medications: widget.medications ?? '',
-              surgeries: widget.surgeries ?? '',
-              emergencyContactName: widget.emergencyContactName ?? '',
-              emergencyContactPhone: widget.emergencyContactPhone ?? '',
-            ),
-          ),
-              (route) => false,
-        );
+        if (doc.exists) {
+          // ✅ Registered user → load their data and go to Home
+          setState(() => _isLoading = false);
+          _goToHome(firestoreData: doc.data());
+        } else {
+          // ❌ Unregistered user → block and show error
+          await FirebaseAuth.instance.signOut();
+          _showOtpError(
+              'No account found for this number. Please sign up first.');
+        }
       }
     } on FirebaseAuthException catch (e) {
-      setState(() {
-        _isLoading = false;
-        _showError = true;
-        _errorMessage = switch (e.code) {
-          'invalid-verification-code' => 'Invalid OTP. Please try again.',
-          'session-expired' => 'OTP expired. Please resend.',
-          _ => e.message ?? 'Verification failed. Try again.',
-        };
+      _showOtpError(switch (e.code) {
+        'invalid-verification-code' => 'Invalid OTP. Please try again.',
+        'session-expired'           => 'OTP expired. Please resend.',
+        _                           => e.message ?? 'Verification failed. Try again.',
       });
-      // Clear all boxes on wrong OTP
-      for (var c in _controllers) c.clear();
-      _focusNodes[0].requestFocus();
     }
   }
 
-  // ── Resend OTP ───────────────────────────────────────
+  // ── Resend OTP ───────────────────────────────────────────────────────────────
   void _resendOtp() async {
-    for (var c in _controllers) c.clear();
+    for (var c in _controllers) { c.clear(); }
     setState(() {
       _showError = false;
       _errorMessage = '';
@@ -197,6 +227,7 @@ class _OtpScreenState extends State<OtpScreen> {
       phoneNumber: '+91${widget.mobileNumber}',
       timeout: const Duration(seconds: 60),
       codeSent: (String verificationId, int? resendToken) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('OTP resent successfully!'),
@@ -204,58 +235,18 @@ class _OtpScreenState extends State<OtpScreen> {
           ),
         );
       },
-        verificationCompleted: (PhoneAuthCredential credential) async {
-          final userCredential =
-          await FirebaseAuth.instance.signInWithCredential(credential);
-
-          final user = userCredential.user;
-
-          if (user != null) {
-            await FirebaseFirestore.instance
-                .collection('users')
-                .doc(user.uid)
-                .set({
-              'phone': user.phoneNumber,
-              'name': widget.userName ?? 'User',
-              'age': widget.age ?? '',
-              'gender': widget.gender ?? '',
-              'bloodGroup': widget.bloodGroup ?? '',
-              'allergies': widget.allergies ?? '',
-              'conditions': widget.conditions ?? '',
-              'medications': widget.medications ?? '',
-              'surgeries': widget.surgeries ?? '',
-              'emergencyContactName': widget.emergencyContactName ?? '',
-              'emergencyContactPhone': widget.emergencyContactPhone ?? '',
-              'createdAt': FieldValue.serverTimestamp(),
-            }, SetOptions(merge: true));
-          }
-
-          setState(() {
-            _isLoading = false;
-          });
-
-          if (mounted) {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(
-                builder: (context) => HomeDashboard(
-                  userName: widget.userName ?? 'User',
-                  age: widget.age ?? '—',
-                  gender: widget.gender ?? '—',
-                  bloodGroup: widget.bloodGroup ?? '—',
-                  allergies: widget.allergies ?? '',
-                  conditions: widget.conditions ?? '',
-                  medications: widget.medications ?? '',
-                  surgeries: widget.surgeries ?? '',
-                  emergencyContactName: widget.emergencyContactName ?? '',
-                  emergencyContactPhone: widget.emergencyContactPhone ?? '',
-                ),
-              ),
-                  (route) => false,
-            );
-          }
-        },
+      verificationCompleted: (PhoneAuthCredential credential) async {
+        final userCredential =
+        await FirebaseAuth.instance.signInWithCredential(credential);
+        final user = userCredential.user;
+        if (user != null && _isSignUp) {
+          await _saveUserToFirestore(user);
+        }
+        setState(() => _isLoading = false);
+        _goToHome();
+      },
       verificationFailed: (FirebaseAuthException e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(e.message ?? 'Failed to resend OTP.'),
@@ -297,7 +288,9 @@ class _OtpScreenState extends State<OtpScreen> {
             RichText(
               text: TextSpan(
                 style: TextStyle(
-                    color: Colors.grey.shade500, fontSize: 15, height: 1.5),
+                    color: Colors.grey.shade500,
+                    fontSize: 15,
+                    height: 1.5),
                 children: [
                   const TextSpan(text: 'We sent a 6-digit OTP to\n'),
                   TextSpan(
@@ -342,7 +335,8 @@ class _OtpScreenState extends State<OtpScreen> {
                         borderSide: BorderSide(
                           color: _isBoxEmpty(index)
                               ? Colors.red
-                              : const Color(0xFF1565C0).withValues(alpha: 0.3),
+                              : const Color(0xFF1565C0)
+                              .withValues(alpha: 0.3),
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
@@ -350,7 +344,8 @@ class _OtpScreenState extends State<OtpScreen> {
                         borderSide: BorderSide(
                           color: _isBoxEmpty(index)
                               ? Colors.red
-                              : const Color(0xFF1565C0).withValues(alpha: 0.3),
+                              : const Color(0xFF1565C0)
+                              .withValues(alpha: 0.3),
                           width: _isBoxEmpty(index) ? 1.5 : 1,
                         ),
                       ),
@@ -376,15 +371,17 @@ class _OtpScreenState extends State<OtpScreen> {
                           _focusNodes[index + 1].requestFocus();
                         } else {
                           _focusNodes[index].unfocus();
-                          // Auto verify on 6th digit with 300ms delay
-                          Future.delayed(const Duration(milliseconds: 300), () {
+                          Future.delayed(
+                              const Duration(milliseconds: 300), () {
                             final otp =
                             _controllers.map((c) => c.text).join();
                             if (otp.length == 6) _verifyOtp();
                           });
                         }
                       } else {
-                        if (index > 0) _focusNodes[index - 1].requestFocus();
+                        if (index > 0) {
+                          _focusNodes[index - 1].requestFocus();
+                        }
                       }
                     },
                     onTapOutside: (_) => FocusScope.of(context).unfocus(),
@@ -405,8 +402,8 @@ class _OtpScreenState extends State<OtpScreen> {
                     Expanded(
                       child: Text(
                         _errorMessage,
-                        style:
-                        TextStyle(color: Colors.red.shade700, fontSize: 13),
+                        style: TextStyle(
+                            color: Colors.red.shade700, fontSize: 13),
                       ),
                     ),
                   ],
