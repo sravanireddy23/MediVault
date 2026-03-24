@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'mobile_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'home_dashboard.dart';
 
 class SignUpPage2 extends StatefulWidget {
   final String name;
@@ -8,6 +10,8 @@ class SignUpPage2 extends StatefulWidget {
   final String dob;
   final String gender;
   final String bloodGroup;
+  final String email;
+  final String password;
 
   const SignUpPage2({
     super.key,
@@ -16,6 +20,8 @@ class SignUpPage2 extends StatefulWidget {
     required this.dob,
     required this.gender,
     required this.bloodGroup,
+    required this.email,
+    required this.password,
   });
 
   @override
@@ -23,13 +29,15 @@ class SignUpPage2 extends StatefulWidget {
 }
 
 class _SignUpPage2State extends State<SignUpPage2> {
-  final _formKey = GlobalKey<FormState>();
-  final _allergiesController = TextEditingController();
-  final _chronicController = TextEditingController();
-  final _medicationsController = TextEditingController();
-  final _surgeriesController = TextEditingController();
-  final _emergencyNameController = TextEditingController();
-  final _emergencyPhoneController = TextEditingController();
+  final _formKey                   = GlobalKey<FormState>();
+  final _allergiesController       = TextEditingController();
+  final _chronicController         = TextEditingController();
+  final _medicationsController     = TextEditingController();
+  final _surgeriesController       = TextEditingController();
+  final _emergencyNameController   = TextEditingController();
+  final _emergencyPhoneController  = TextEditingController();
+
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -42,12 +50,55 @@ class _SignUpPage2State extends State<SignUpPage2> {
     super.dispose();
   }
 
-  void _submitForm() {
-    if (_formKey.currentState!.validate()) {
-      Navigator.pushReplacement(
+  // ── Create account with Firebase Auth + save to Firestore ────────────────────
+  Future<void> _submitForm() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      // Step 1: Create Firebase Auth account
+      final userCredential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(
+        email: widget.email,
+        password: widget.password,
+      );
+
+      final user = userCredential.user;
+      if (user == null) {
+        _showError('Something went wrong. Please try again.');
+        return;
+      }
+
+      // Step 2: Save user data to Firestore
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .set({
+        'email': widget.email,
+        'name': widget.name,
+        'age': widget.age,
+        'dob': widget.dob,
+        'gender': widget.gender,
+        'bloodGroup': widget.bloodGroup,
+        'allergies': _allergiesController.text.trim(),
+        'conditions': _chronicController.text.trim(),
+        'medications': _medicationsController.text.trim(),
+        'surgeries': _surgeriesController.text.trim(),
+        'emergencyContactName': _emergencyNameController.text.trim(),
+        'emergencyContactPhone': _emergencyPhoneController.text.trim(),
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      setState(() => _isLoading = false);
+
+      if (!mounted) return;
+
+      // Step 3: Navigate to Home Dashboard
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
-          builder: (context) => MobileScreen(
+          builder: (context) => HomeDashboard(
             userName: widget.name,
             age: widget.age,
             gender: widget.gender,
@@ -56,12 +107,46 @@ class _SignUpPage2State extends State<SignUpPage2> {
             conditions: _chronicController.text.trim(),
             medications: _medicationsController.text.trim(),
             surgeries: _surgeriesController.text.trim(),
-            emergencyContactName: _emergencyNameController.text.trim(),
-            emergencyContactPhone: _emergencyPhoneController.text.trim(),
+            emergencyContactName:
+            _emergencyNameController.text.trim(),
+            emergencyContactPhone:
+            _emergencyPhoneController.text.trim(),
           ),
         ),
+            (route) => false,
       );
+    } on FirebaseAuthException catch (e) {
+      _showError(switch (e.code) {
+        'email-already-in-use' =>
+        'An account already exists for this email. Please sign in.',
+        'weak-password' =>
+        'Password is too weak. Please use a stronger password.',
+        'invalid-email' => 'Please enter a valid email address.',
+        _ => e.message ?? 'Registration failed. Please try again.',
+      });
     }
+  }
+
+  void _showError(String message) {
+    setState(() => _isLoading = false);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error_outline_rounded,
+                color: Colors.white, size: 16),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(12),
+      ),
+    );
   }
 
   @override
@@ -72,27 +157,28 @@ class _SignUpPage2State extends State<SignUpPage2> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Color(0xFF1565C0)),
+          icon: const Icon(Icons.arrow_back_ios,
+              color: Color(0xFF1565C0)),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Medical Info',
           style: TextStyle(
-            color: Color(0xFF1565C0),
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
+              color: Color(0xFF1565C0),
+              fontWeight: FontWeight.bold,
+              fontSize: 20),
         ),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 28.0, vertical: 16),
+        padding:
+        const EdgeInsets.symmetric(horizontal: 28.0, vertical: 16),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Progress Indicator ─────────────────────────
+              // ── Progress ───────────────────────────────────
               Row(
                 children: [
                   Expanded(
@@ -119,7 +205,8 @@ class _SignUpPage2State extends State<SignUpPage2> {
               const SizedBox(height: 8),
               Text(
                 'Step 2 of 2  —  Critical Medical Emergency Info',
-                style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+                style: TextStyle(
+                    color: Colors.grey.shade500, fontSize: 13),
               ),
 
               const SizedBox(height: 16),
@@ -132,7 +219,8 @@ class _SignUpPage2State extends State<SignUpPage2> {
                   color: const Color(0xFFFFEBEE),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: const Color(0xFFD32F2F).withValues(alpha: 0.4),
+                    color: const Color(0xFFD32F2F)
+                        .withValues(alpha: 0.4),
                   ),
                 ),
                 child: const Row(
@@ -144,10 +232,9 @@ class _SignUpPage2State extends State<SignUpPage2> {
                       child: Text(
                         'This info will be accessible during emergencies without login.',
                         style: TextStyle(
-                          color: Color(0xFFD32F2F),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
+                            color: Color(0xFFD32F2F),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500),
                       ),
                     ),
                   ],
@@ -156,7 +243,7 @@ class _SignUpPage2State extends State<SignUpPage2> {
 
               const SizedBox(height: 24),
 
-              // ── Known Allergies (no validation) ────────────
+              // ── Known Allergies ────────────────────────────
               _buildLabel('Known Allergies'),
               const SizedBox(height: 4),
               _buildSubLabel('e.g. Penicillin, Peanuts, Dust'),
@@ -170,7 +257,7 @@ class _SignUpPage2State extends State<SignUpPage2> {
 
               const SizedBox(height: 22),
 
-              // ── Chronic Conditions (no validation) ─────────
+              // ── Chronic Conditions ─────────────────────────
               _buildLabel('Chronic Conditions'),
               const SizedBox(height: 4),
               _buildSubLabel('e.g. Diabetes, Hypertension, Asthma'),
@@ -184,7 +271,7 @@ class _SignUpPage2State extends State<SignUpPage2> {
 
               const SizedBox(height: 22),
 
-              // ── Current Medications (no validation) ────────
+              // ── Current Medications ────────────────────────
               _buildLabel('Current Medications'),
               const SizedBox(height: 4),
               _buildSubLabel('e.g. Metformin 500mg, Amlodipine 5mg'),
@@ -198,10 +285,10 @@ class _SignUpPage2State extends State<SignUpPage2> {
 
               const SizedBox(height: 22),
 
-              // ── Past Surgeries (no validation) ─────────────
+              // ── Past Surgeries ─────────────────────────────
               _buildLabel('Past Surgeries'),
               const SizedBox(height: 4),
-              _buildSubLabel('e.g. Appendectomy 2019, Knee surgery 2021'),
+              _buildSubLabel('e.g. Appendectomy 2019'),
               const SizedBox(height: 8),
               _buildTextField(
                 controller: _surgeriesController,
@@ -212,7 +299,7 @@ class _SignUpPage2State extends State<SignUpPage2> {
 
               const SizedBox(height: 28),
 
-              // ── Emergency Contact ──────────────────────────
+              // ── Emergency Contact header ───────────────────
               Row(
                 children: [
                   const Icon(Icons.contact_phone_outlined,
@@ -221,15 +308,15 @@ class _SignUpPage2State extends State<SignUpPage2> {
                   const Text(
                     'Emergency Contact',
                     style: TextStyle(
-                      color: Color(0xFF1565C0),
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                        color: Color(0xFF1565C0),
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Divider(
-                      color: const Color(0xFF1565C0).withValues(alpha: 0.3),
+                      color: const Color(0xFF1565C0)
+                          .withValues(alpha: 0.3),
                     ),
                   ),
                 ],
@@ -237,7 +324,7 @@ class _SignUpPage2State extends State<SignUpPage2> {
 
               const SizedBox(height: 16),
 
-              // ── Emergency Contact Name (WITH validation) ───
+              // ── Emergency Contact Name ─────────────────────
               _buildLabel('Contact Name'),
               const SizedBox(height: 8),
               _buildTextField(
@@ -251,10 +338,8 @@ class _SignUpPage2State extends State<SignUpPage2> {
                   if (value.trim().length < 3) {
                     return 'Name must be at least 3 characters';
                   }
-                  if (value.trim().length > 50) {
-                    return 'Name must be less than 50 characters';
-                  }
-                  if (!RegExp(r"^[a-zA-Z\s]+$").hasMatch(value.trim())) {
+                  if (!RegExp(r"^[a-zA-Z\s]+$")
+                      .hasMatch(value.trim())) {
                     return 'Name must contain letters only';
                   }
                   return null;
@@ -263,7 +348,7 @@ class _SignUpPage2State extends State<SignUpPage2> {
 
               const SizedBox(height: 22),
 
-              // ── Emergency Contact Phone (WITH validation) ──
+              // ── Emergency Contact Phone ────────────────────
               _buildLabel('Contact Phone Number'),
               const SizedBox(height: 8),
               _buildTextField(
@@ -282,7 +367,8 @@ class _SignUpPage2State extends State<SignUpPage2> {
                   if (value.trim().length != 10) {
                     return 'Phone number must be exactly 10 digits';
                   }
-                  if (!RegExp(r'^[6-9][0-9]{9}$').hasMatch(value.trim())) {
+                  if (!RegExp(r'^[6-9][0-9]{9}$')
+                      .hasMatch(value.trim())) {
                     return 'Enter a valid Indian mobile number';
                   }
                   return null;
@@ -291,33 +377,42 @@ class _SignUpPage2State extends State<SignUpPage2> {
 
               const SizedBox(height: 40),
 
-              // ── Submit Button ──────────────────────────────
+              // ── Create Account Button ──────────────────────
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _submitForm,
+                  onPressed: _isLoading ? null : _submitForm,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1565C0),
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    padding:
+                    const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
+                        borderRadius: BorderRadius.circular(14)),
                     elevation: 0,
                   ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  child: _isLoading
+                      ? const SizedBox(
+                    height: 22,
+                    width: 22,
+                    child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2.5),
+                  )
+                      : const Row(
+                    mainAxisAlignment:
+                    MainAxisAlignment.center,
                     children: [
                       Text(
                         'Create Account',
                         style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
-                        ),
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5),
                       ),
                       SizedBox(width: 8),
-                      Icon(Icons.check_circle_outline, size: 20),
+                      Icon(Icons.check_circle_outline,
+                          size: 20),
                     ],
                   ),
                 ),
@@ -334,17 +429,17 @@ class _SignUpPage2State extends State<SignUpPage2> {
     return Text(
       text,
       style: const TextStyle(
-        color: Color(0xFF1A1A2E),
-        fontSize: 15,
-        fontWeight: FontWeight.w600,
-      ),
+          color: Color(0xFF1A1A2E),
+          fontSize: 15,
+          fontWeight: FontWeight.w600),
     );
   }
 
   Widget _buildSubLabel(String text) {
     return Text(
       text,
-      style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+      style: TextStyle(
+          color: Colors.grey.shade500, fontSize: 12),
     );
   }
 
@@ -365,28 +460,34 @@ class _SignUpPage2State extends State<SignUpPage2> {
       maxLines: maxLines,
       inputFormatters: inputFormatters,
       validator: validator,
-      style: const TextStyle(color: Color(0xFF1A1A2E), fontSize: 15),
+      style: const TextStyle(
+          color: Color(0xFF1A1A2E), fontSize: 15),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 15),
-        prefixIcon: Icon(icon, color: const Color(0xFF1565C0), size: 20),
+        hintStyle:
+        TextStyle(color: Colors.grey.shade400, fontSize: 15),
+        prefixIcon:
+        Icon(icon, color: const Color(0xFF1565C0), size: 20),
         filled: true,
         fillColor: const Color(0xFFF5F8FF),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:
-              BorderSide(color: const Color(0xFF1565C0).withValues(alpha: 0.3)),
+          borderSide: BorderSide(
+              color: const Color(0xFF1565C0)
+                  .withValues(alpha: 0.3)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:
-              BorderSide(color: const Color(0xFF1565C0).withValues(alpha: 0.3)),
+          borderSide: BorderSide(
+              color: const Color(0xFF1565C0)
+                  .withValues(alpha: 0.3)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF1565C0), width: 2),
+          borderSide: const BorderSide(
+              color: Color(0xFF1565C0), width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -394,7 +495,8 @@ class _SignUpPage2State extends State<SignUpPage2> {
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 2),
+          borderSide:
+          const BorderSide(color: Colors.red, width: 2),
         ),
       ),
     );
