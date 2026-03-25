@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 
 class UploadRecordScreen extends StatefulWidget {
   const UploadRecordScreen({super.key});
@@ -26,16 +27,17 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
   final _directFormKey       = GlobalKey<FormState>();
 
   // ── Controllers ──────────────────────────────────────────────────────────────
-  final _titleController    = TextEditingController();
-  final _doctorController   = TextEditingController();
-  final _hospitalController = TextEditingController();
+  final _titleController      = TextEditingController();
+  final _doctorController     = TextEditingController();
+  final _hospitalController   = TextEditingController();
   final _reportNameController = TextEditingController();
 
   // ── State ────────────────────────────────────────────────────────────────────
-  DateTime? _selectedDate;
-  String?   _uploadedFileName;
-  bool      _isUploading = false;
-  String?   _selectedEpisodeId; // for existing episode selection
+  DateTime?      _selectedDate;
+  String?        _uploadedFileName;
+  PlatformFile?  _pickedFile;          // ← holds the actual picked file
+  bool           _isUploading = false;
+  String?        _selectedEpisodeId;
 
   late AnimationController _checkController;
   late Animation<double>   _checkAnimation;
@@ -130,68 +132,101 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
     if (picked != null) setState(() => _selectedDate = picked);
   }
 
-  // ── File picker (simulated — will use file_picker package later) ─────────────
-  void _pickFile() {
-    // TODO: integrate file_picker package
-    setState(() {
-      _uploadedFileName =
-      'document_${DateTime.now().millisecondsSinceEpoch}.pdf';
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Row(
-          children: [
-            Icon(Icons.check_circle_rounded,
-                color: Colors.white, size: 16),
-            SizedBox(width: 8),
-            Text('File selected successfully'),
-          ],
-        ),
-        backgroundColor: const Color(0xFF2E7D32),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10)),
-        margin: const EdgeInsets.all(12),
+  // ── TOP BANNER: success ───────────────────────────────────────────────────────
+  void _showTopBanner({required bool success, String? customMessage}) {
+    final overlay = Overlay.of(context);
+    final overlayEntry = OverlayEntry(
+      builder: (context) => _TopBanner(
+        success: success,
+        message: customMessage ??
+            (success
+                ? 'Report uploaded successfully!'
+                : 'Upload unsuccessful. Please try again.'),
       ),
     );
+
+    overlay.insert(overlayEntry);
+
+    // Auto-remove after 3 seconds
+    Future.delayed(const Duration(seconds: 6), () {
+      overlayEntry.remove();
+    });
+  }
+
+  // ── Real file picker ─────────────────────────────────────────────────────────
+  Future<void> _pickFile() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+        allowMultiple: false,
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        final file = result.files.first;
+
+        // Check file size (limit: 10 MB)
+        if (file.size > 10 * 1024 * 1024) {
+          if (!mounted) return;
+          _showTopBanner(
+            success: false,
+            customMessage: 'File too large. Maximum size is 10 MB.',
+          );
+          return;
+        }
+
+        setState(() {
+          _pickedFile        = file;
+          _uploadedFileName  = file.name;
+        });
+
+        _showTopBanner(
+          success: true,
+          customMessage: 'File selected: ${file.name}',
+        );
+      }
+      // If user cancelled → do nothing (no error banner)
+    } catch (e) {
+      if (!mounted) return;
+      _showTopBanner(
+        success: false,
+        customMessage: 'Could not open file picker. Please try again.',
+      );
+    }
   }
 
   // ── Validate and submit ──────────────────────────────────────────────────────
   Future<void> _submit() async {
-    // Validate based on upload type
     bool isValid = false;
 
     if (_uploadType == 0) {
-      // New Visit
       isValid = _newVisitFormKey.currentState?.validate() ?? false;
       if (isValid && _selectedDate == null) {
-        _showError('Please select the visit date');
+        _showTopBanner(success: false, customMessage: 'Please select the visit date.');
         return;
       }
       if (isValid && _uploadedFileName == null) {
-        _showError('Please upload a file');
+        _showTopBanner(success: false, customMessage: 'Please upload a file.');
         return;
       }
     } else if (_uploadType == 1) {
-      // Add to Existing
       if (_selectedEpisodeId == null) {
-        _showError('Please select an existing episode');
+        _showTopBanner(success: false, customMessage: 'Please select an existing episode.');
         return;
       }
       isValid = _existingFormKey.currentState?.validate() ?? false;
       if (isValid && _uploadedFileName == null) {
-        _showError('Please upload a file');
+        _showTopBanner(success: false, customMessage: 'Please upload a file.');
         return;
       }
     } else {
-      // Direct Upload
       isValid = _directFormKey.currentState?.validate() ?? false;
       if (isValid && _selectedDate == null) {
-        _showError('Please select the report date');
+        _showTopBanner(success: false, customMessage: 'Please select the report date.');
         return;
       }
       if (isValid && _uploadedFileName == null) {
-        _showError('Please upload a file');
+        _showTopBanner(success: false, customMessage: 'Please upload a file.');
         return;
       }
     }
@@ -199,34 +234,29 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
     if (!isValid) return;
 
     setState(() => _isUploading = true);
-    // TODO: Save to Firestore + AWS S3
-    await Future.delayed(const Duration(seconds: 2));
-    if (!mounted) return;
-    setState(() => _isUploading = false);
-    _checkController.forward();
-    await Future.delayed(const Duration(milliseconds: 500));
-    if (!mounted) return;
-    _showSuccessSheet();
-  }
 
-  void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.error_outline_rounded,
-                color: Colors.white, size: 16),
-            const SizedBox(width: 8),
-            Text(msg),
-          ],
-        ),
-        backgroundColor: const Color(0xFFE53935),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10)),
-        margin: const EdgeInsets.all(12),
-      ),
-    );
+    try {
+      // TODO: Save to Firestore + AWS S3
+      await Future.delayed(const Duration(seconds: 2));
+
+      if (!mounted) return;
+      setState(() => _isUploading = false);
+
+      // ✅ Show success banner
+      _showTopBanner(success: true, customMessage: 'Report uploaded successfully!');
+
+      _checkController.forward();
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (!mounted) return;
+      _showSuccessSheet();
+
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isUploading = false);
+
+      // ❌ Show failure banner
+      _showTopBanner(success: false, customMessage: 'Upload unsuccessful. Please try again.');
+    }
   }
 
   // ── Success Sheet ─────────────────────────────────────────────────────────────
@@ -260,7 +290,6 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
               ),
             ),
             const SizedBox(height: 32),
-            // Success icon
             ScaleTransition(
               scale: _checkAnimation,
               child: Container(
@@ -290,7 +319,6 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
                   height: 1.5),
             ),
             const SizedBox(height: 16),
-            // AI note
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
@@ -317,7 +345,6 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
               ),
             ),
             const SizedBox(height: 28),
-            // Back to dashboard
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -363,12 +390,24 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
     _hospitalController.clear();
     _reportNameController.clear();
     setState(() {
-      _uploadType       = 0;
-      _selectedDate     = null;
-      _uploadedFileName = null;
+      _uploadType        = 0;
+      _selectedDate      = null;
+      _uploadedFileName  = null;
+      _pickedFile        = null;
       _selectedEpisodeId = null;
     });
     _checkController.reset();
+  }
+
+  void _resetControllers() {
+    _titleController.clear();
+    _doctorController.clear();
+    _hospitalController.clear();
+    _reportNameController.clear();
+    _selectedDate      = null;
+    _uploadedFileName  = null;
+    _pickedFile        = null;
+    _selectedEpisodeId = null;
   }
 
   // ── Build ────────────────────────────────────────────────────────────────────
@@ -385,21 +424,17 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── Upload type selector ─────────────────────────
                   _buildSectionLabel(
                       'What type of upload?', Icons.category_rounded),
                   const SizedBox(height: 12),
                   _buildUploadTypeSelector(),
                   const SizedBox(height: 24),
 
-                  // ── Dynamic form based on type ───────────────────
                   if (_uploadType == 0) _buildNewVisitForm(),
                   if (_uploadType == 1) _buildExistingVisitForm(),
                   if (_uploadType == 2) _buildDirectUploadForm(),
 
                   const SizedBox(height: 36),
-
-                  // ── Upload button ────────────────────────────────
                   _buildUploadButton(),
                   const SizedBox(height: 20),
                 ],
@@ -543,8 +578,7 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
                     types[index]['label'] as String,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                        color:
-                        isSelected ? Colors.white : _darkText,
+                        color: isSelected ? Colors.white : _darkText,
                         fontSize: 11,
                         fontWeight: FontWeight.bold),
                   ),
@@ -567,16 +601,6 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
     );
   }
 
-  void _resetControllers() {
-    _titleController.clear();
-    _doctorController.clear();
-    _hospitalController.clear();
-    _reportNameController.clear();
-    _selectedDate = null;
-    _uploadedFileName = null;
-    _selectedEpisodeId = null;
-  }
-
   // ── New Visit Form ───────────────────────────────────────────────────────────
   Widget _buildNewVisitForm() {
     return Form(
@@ -595,8 +619,7 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
                 : null,
           ),
           const SizedBox(height: 20),
-          _buildSectionLabel(
-              'Hospital / Clinic', Icons.business_rounded),
+          _buildSectionLabel('Hospital / Clinic', Icons.business_rounded),
           const SizedBox(height: 10),
           _buildTextField(
             controller: _hospitalController,
@@ -642,7 +665,6 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
           _buildSectionLabel(
               'Select Existing Episode', Icons.history_rounded),
           const SizedBox(height: 12),
-          // Episode list
           ..._existingEpisodes.map((ep) => _buildEpisodeSelectItem(ep)),
           const SizedBox(height: 20),
           _buildSectionLabel('Report Title', Icons.description_rounded),
@@ -684,8 +706,7 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
                 : null,
           ),
           const SizedBox(height: 20),
-          _buildSectionLabel(
-              'Date on Report', Icons.calendar_today_rounded),
+          _buildSectionLabel('Date on Report', Icons.calendar_today_rounded),
           const SizedBox(height: 10),
           _buildDatePicker('Date printed on the report'),
           const SizedBox(height: 20),
@@ -702,7 +723,7 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
   // ── Episode select item ──────────────────────────────────────────────────────
   Widget _buildEpisodeSelectItem(Map<String, dynamic> ep) {
     final isSelected = _selectedEpisodeId == ep['id'];
-    final color = ep['color'] as Color;
+    final color      = ep['color'] as Color;
     final lightColor = ep['lightColor'] as Color;
 
     return GestureDetector(
@@ -729,7 +750,6 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
         ),
         child: Row(
           children: [
-            // Dept icon
             Container(
               width: 36,
               height: 36,
@@ -743,7 +763,6 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
               ),
             ),
             const SizedBox(width: 12),
-            // Info
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -776,7 +795,6 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
                 ],
               ),
             ),
-            // Radio indicator
             Container(
               width: 20,
               height: 20,
@@ -824,9 +842,6 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
                 ? const Color(0xFF2E7D32)
                 : _blue.withValues(alpha: 0.4),
             width: 1.5,
-            style: _uploadedFileName != null
-                ? BorderStyle.solid
-                : BorderStyle.solid,
           ),
         ),
         child: Column(
@@ -858,7 +873,7 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
                   ? _uploadedFileName!.length > 30
                   ? '${_uploadedFileName!.substring(0, 30)}...'
                   : _uploadedFileName!
-                  : 'PDF, JPG, PNG supported',
+                  : 'PDF, JPG, PNG supported  •  Max 10 MB',
               style: TextStyle(
                   fontSize: 11,
                   color: _uploadedFileName != null
@@ -868,7 +883,10 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
             if (_uploadedFileName != null) ...[
               const SizedBox(height: 8),
               GestureDetector(
-                onTap: () => setState(() => _uploadedFileName = null),
+                onTap: () => setState(() {
+                  _uploadedFileName = null;
+                  _pickedFile       = null;
+                }),
                 child: const Text('Remove',
                     style: TextStyle(
                         color: Color(0xFFE53935),
@@ -889,13 +907,11 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
       decoration: BoxDecoration(
         color: const Color(0xFFE8F5E9),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-            color: const Color(0xFFA5D6A7), width: 0.8),
+        border: Border.all(color: const Color(0xFFA5D6A7), width: 0.8),
       ),
       child: const Row(
         children: [
-          Icon(Icons.psychology_rounded,
-              size: 16, color: Color(0xFF2E7D32)),
+          Icon(Icons.psychology_rounded, size: 16, color: Color(0xFF2E7D32)),
           SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -916,8 +932,7 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
     return GestureDetector(
       onTap: _pickDate,
       child: Container(
-        padding: const EdgeInsets.symmetric(
-            horizontal: 16, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
           color: const Color(0xFFF5F8FF),
           borderRadius: BorderRadius.circular(12),
@@ -930,8 +945,7 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
         ),
         child: Row(
           children: [
-            const Icon(Icons.calendar_today_rounded,
-                color: _blue, size: 20),
+            const Icon(Icons.calendar_today_rounded, color: _blue, size: 20),
             const SizedBox(width: 14),
             Expanded(
               child: Text(
@@ -991,22 +1005,19 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
       style: const TextStyle(color: _darkText, fontSize: 15),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(
-            color: Colors.grey.shade400, fontSize: 14),
+        hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
         prefixIcon: Icon(icon, color: _blue, size: 20),
         filled: true,
         fillColor: const Color(0xFFF5F8FF),
-        contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16, vertical: 16),
+        contentPadding:
+        const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:
-          BorderSide(color: _blue.withValues(alpha: 0.3)),
+          borderSide: BorderSide(color: _blue.withValues(alpha: 0.3)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:
-          BorderSide(color: _blue.withValues(alpha: 0.3)),
+          borderSide: BorderSide(color: _blue.withValues(alpha: 0.3)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -1014,13 +1025,12 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:
-          const BorderSide(color: Color(0xFFE53935)),
+          borderSide: const BorderSide(color: Color(0xFFE53935)),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-              color: Color(0xFFE53935), width: 2),
+          borderSide:
+          const BorderSide(color: Color(0xFFE53935), width: 2),
         ),
       ),
     );
@@ -1049,15 +1059,12 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
               width: 20,
               height: 20,
               child: CircularProgressIndicator(
-                color: Colors.white,
-                strokeWidth: 2.5,
-              ),
+                  color: Colors.white, strokeWidth: 2.5),
             ),
             SizedBox(width: 14),
             Text('Uploading...',
                 style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold)),
+                    fontSize: 16, fontWeight: FontWeight.bold)),
           ],
         )
             : const Row(
@@ -1067,9 +1074,95 @@ class _UploadRecordScreenState extends State<UploadRecordScreen>
             SizedBox(width: 10),
             Text('Upload Record',
                 style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold)),
+                    fontSize: 16, fontWeight: FontWeight.bold)),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════════
+// TOP BANNER WIDGET  (appears at the very top of the screen)
+// ════════════════════════════════════════════════════════════════════════════════
+class _TopBanner extends StatefulWidget {
+  final bool   success;
+  final String message;
+
+  const _TopBanner({required this.success, required this.message});
+
+  @override
+  State<_TopBanner> createState() => _TopBannerState();
+}
+
+class _TopBannerState extends State<_TopBanner>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<Offset>   _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
+    _slide = Tween<Offset>(
+      begin: const Offset(0, -1),
+      end:   Offset.zero,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+    _ctrl.forward();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bgColor   = widget.success
+        ? const Color(0xFF2E7D32)   // dark green
+        : const Color(0xFFE53935);  // red
+    final icon = widget.success
+        ? Icons.check_circle_rounded
+        : Icons.error_rounded;
+
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: SlideTransition(
+        position: _slide,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            width: double.infinity,
+            color: bgColor,
+            padding: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top + 12,
+              bottom: 14,
+              left: 16,
+              right: 16,
+            ),
+            child: Row(
+              children: [
+                Icon(icon, color: Colors.white, size: 22),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    widget.message,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

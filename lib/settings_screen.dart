@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'auth_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -101,7 +102,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               padding: const EdgeInsets.fromLTRB(20, 44, 20, 12),
               child: Row(
                 children: [
-                  // Initials avatar
                   Container(
                     width: 48,
                     height: 48,
@@ -454,8 +454,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (_) => Container(
         decoration: const BoxDecoration(
           color: Colors.white,
-          borderRadius:
-          BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
         child: Column(
@@ -494,8 +493,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           : FontWeight.normal),
                 ),
                 trailing: _selectedLanguage == lang
-                    ? const Icon(Icons.check_circle_rounded,
-                    color: _blue)
+                    ? const Icon(Icons.check_circle_rounded, color: _blue)
                     : null,
                 onTap: () {
                   setState(() => _selectedLanguage = lang);
@@ -518,8 +516,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             borderRadius: BorderRadius.circular(16)),
         title: const Text(
           'Logout',
-          style:
-          TextStyle(color: _darkText, fontWeight: FontWeight.bold),
+          style: TextStyle(
+              color: _darkText, fontWeight: FontWeight.bold),
         ),
         content: Text(
           'Are you sure you want to logout?',
@@ -532,12 +530,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
-            onPressed: () {
+            // ✅ FIXED: now calls FirebaseAuth.signOut() before navigating
+            onPressed: () async {
               Navigator.pop(context);
+              await FirebaseAuth.instance.signOut();
+              if (!mounted) return;
               Navigator.pushAndRemoveUntil(
                 context,
-                MaterialPageRoute(
-                    builder: (_) => const AuthScreen()),
+                MaterialPageRoute(builder: (_) => const AuthScreen()),
                     (route) => false,
               );
             },
@@ -601,7 +601,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // ── About ─────────────────────────────────────────────────────────────────────
+  // ── About ────────────────────────────────────────────────────────────────────
   void _showAboutDialog() {
     showDialog(
       context: context,
@@ -610,8 +610,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             borderRadius: BorderRadius.circular(16)),
         title: const Row(
           children: [
-            Icon(Icons.local_hospital_rounded,
-                color: _blue, size: 22),
+            Icon(Icons.local_hospital_rounded, color: _blue, size: 22),
             SizedBox(width: 8),
             Text(
               'MediVault',
@@ -626,35 +625,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Text(
               'Version 1.0.0',
-              style: TextStyle(
-                  color: Colors.grey.shade500, fontSize: 13),
+              style:
+              TextStyle(color: Colors.grey.shade500, fontSize: 13),
             ),
             const SizedBox(height: 8),
             Text(
               'Your lifelong medical records — secure, organized, always accessible.',
-              style: TextStyle(
-                  color: Colors.grey.shade600, fontSize: 13),
+              style:
+              TextStyle(color: Colors.grey.shade600, fontSize: 13),
             ),
             const SizedBox(height: 8),
             Text(
               'Built with love for better personal healthcare.',
-              style: TextStyle(
-                  color: Colors.grey.shade500, fontSize: 12),
+              style:
+              TextStyle(color: Colors.grey.shade500, fontSize: 12),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close',
-                style: TextStyle(color: _blue)),
+            child:
+            const Text('Close', style: TextStyle(color: _blue)),
           ),
         ],
       ),
     );
   }
 
-  // ── Snack ─────────────────────────────────────────────────────────────────────
+  // ── Snack helpers ────────────────────────────────────────────────────────────
   void _showComingSoon(String feature) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

@@ -247,80 +247,95 @@ class EmergencyInfoScreen extends StatelessWidget {
   }
 
   // ── Blood Group Card ─────────────────────────────────────────────────────────
+  // ✅ FIXED: using ClipRRect + inner red bar instead of non-uniform Border
   Widget _bloodGroupCard() {
     final bg = bloodGroup.trim().isEmpty ? 'N/A' : bloodGroup.trim();
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: double.infinity,
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border(
-          left: const BorderSide(color: _red, width: 4),
-          top: BorderSide(color: _lightBlue, width: 1),
-          right: BorderSide(color: _lightBlue, width: 1),
-          bottom: BorderSide(color: _lightBlue, width: 1),
-        ),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 3)),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // ── Red left accent bar ──────────────────────────
+              Container(width: 4, color: _red),
+              // ── Main content ─────────────────────────────────
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                      color: _softRed,
-                      borderRadius: BorderRadius.circular(10)),
-                  child: const Icon(Icons.bloodtype_rounded,
-                      color: _red, size: 22),
+                    border: Border.all(
+                        color: _lightBlue, width: 1),
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3)),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                  color: _softRed,
+                                  borderRadius: BorderRadius.circular(10)),
+                              child: const Icon(Icons.bloodtype_rounded,
+                                  color: _red, size: 22),
+                            ),
+                            const SizedBox(width: 14),
+                            const Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Blood Group',
+                                  style: TextStyle(
+                                      color: _darkText,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                SizedBox(height: 3),
+                                Text(
+                                  'Patient blood type',
+                                  style: TextStyle(
+                                      color: Colors.grey, fontSize: 12),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 22, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: _softRed,
+                          borderRadius: BorderRadius.circular(12),
+                          border:
+                          Border.all(color: _red.withValues(alpha: 0.4)),
+                        ),
+                        child: Text(
+                          bg,
+                          style: const TextStyle(
+                              color: _red,
+                              fontSize: 30,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(width: 14),
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Blood Group',
-                      style: TextStyle(
-                          color: _darkText,
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 3),
-                    Text(
-                      'Patient blood type',
-                      style: TextStyle(color: Colors.grey, fontSize: 12),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 22, vertical: 14),
-            decoration: BoxDecoration(
-              color: _softRed,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: _red.withValues(alpha: 0.4)),
-            ),
-            child: Text(
-              bg,
-              style: const TextStyle(
-                  color: _red,
-                  fontSize: 30,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -378,8 +393,8 @@ class EmergencyInfoScreen extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: _red.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                        color: _red.withValues(alpha: 0.4)),
+                    border:
+                    Border.all(color: _red.withValues(alpha: 0.4)),
                   ),
                   child: const Text(
                     'CRITICAL',
@@ -503,6 +518,7 @@ class EmergencyInfoScreen extends StatelessWidget {
   }
 
   // ── Contact Card ─────────────────────────────────────────────────────────────
+  // ✅ FIXED: using ClipRRect + inner red bar instead of non-uniform Border
   Widget _contactCard(BuildContext context) {
     final contactName = emergencyContactName.trim().isEmpty
         ? 'Not provided'
@@ -512,155 +528,170 @@ class EmergencyInfoScreen extends StatelessWidget {
         : emergencyContactPhone.trim();
     final canCall = emergencyContactPhone.trim().isNotEmpty;
 
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border(
-          left: const BorderSide(color: _red, width: 4),
-          top: BorderSide(color: _lightBlue, width: 1),
-          right: BorderSide(color: _lightBlue, width: 1),
-          bottom: BorderSide(color: _lightBlue, width: 1),
-        ),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 3)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-                color: _softRed,
-                borderRadius: BorderRadius.circular(6)),
-            child: const Text(
-              'EMERGENCY CONTACT',
-              style: TextStyle(
-                  color: _red,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.2),
-            ),
-          ),
-          const SizedBox(height: 18),
-          // Name row
-          Row(
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                    color: _lightBlue,
-                    borderRadius: BorderRadius.circular(10)),
-                child: const Icon(Icons.person_rounded,
-                    color: _blue, size: 22),
-              ),
-              const SizedBox(width: 14),
+              // ── Red left accent bar ──────────────────────────
+              Container(width: 4, color: _red),
+              // ── Main content ─────────────────────────────────
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Contact Name',
-                      style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      contactName,
-                      style: const TextStyle(
-                          color: _darkText,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Container(height: 1, color: _lightBlue),
-          const SizedBox(height: 14),
-          // Phone row
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                    color: canCall
-                        ? _lightBlue
-                        : Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(10)),
-                child: Icon(Icons.phone_rounded,
-                    color: canCall ? _blue : Colors.grey,
-                    size: 22),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Phone Number',
-                      style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      contactPhone,
-                      style: TextStyle(
-                          color: canCall ? _blue : Colors.grey,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: canCall ? 0.5 : 0),
-                    ),
-                  ],
-                ),
-              ),
-              if (canCall)
-                GestureDetector(
-                  onTap: () => _call(emergencyContactPhone),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: _red,
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: [
-                        BoxShadow(
-                            color: _red.withValues(alpha: 0.35),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4)),
-                      ],
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.call_rounded,
-                            color: Colors.white, size: 18),
-                        SizedBox(width: 6),
-                        Text(
-                          'Call',
+                child: Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: _lightBlue, width: 1),
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3)),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                            color: _softRed,
+                            borderRadius: BorderRadius.circular(6)),
+                        child: const Text(
+                          'EMERGENCY CONTACT',
                           style: TextStyle(
-                              color: Colors.white,
+                              color: _red,
+                              fontSize: 10,
                               fontWeight: FontWeight.bold,
-                              fontSize: 14),
+                              letterSpacing: 1.2),
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 18),
+                      // Name row
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                                color: _lightBlue,
+                                borderRadius: BorderRadius.circular(10)),
+                            child: const Icon(Icons.person_rounded,
+                                color: _blue, size: 22),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Contact Name',
+                                  style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500),
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  contactName,
+                                  style: const TextStyle(
+                                      color: _darkText,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      Container(height: 1, color: _lightBlue),
+                      const SizedBox(height: 14),
+                      // Phone row
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                                color: canCall
+                                    ? _lightBlue
+                                    : Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(10)),
+                            child: Icon(Icons.phone_rounded,
+                                color: canCall ? _blue : Colors.grey,
+                                size: 22),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Phone Number',
+                                  style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500),
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  contactPhone,
+                                  style: TextStyle(
+                                      color:
+                                      canCall ? _blue : Colors.grey,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: canCall ? 0.5 : 0),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (canCall)
+                            GestureDetector(
+                              onTap: () =>
+                                  _call(emergencyContactPhone),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: _red,
+                                  borderRadius:
+                                  BorderRadius.circular(10),
+                                  boxShadow: [
+                                    BoxShadow(
+                                        color: _red.withValues(
+                                            alpha: 0.35),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 4)),
+                                  ],
+                                ),
+                                child: const Row(
+                                  children: [
+                                    Icon(Icons.call_rounded,
+                                        color: Colors.white, size: 18),
+                                    SizedBox(width: 6),
+                                    Text(
+                                      'Call',
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
+              ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
