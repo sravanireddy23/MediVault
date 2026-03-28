@@ -32,3 +32,10 @@ Runner/GeneratedPluginRegistrant.*
 !default.mode2v3
 !default.pbxuser
 !default.perspectivev3
+
+# Your secret config
+lib/config/aws_config.dart
+lib/config/news_config.dart
+lib/config/claude_config.dart
+lib/config/vision_config.dart
+android/app/google-services.json

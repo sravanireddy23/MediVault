@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'signup_page1.dart';
 import 'emergency_info_screen.dart';
 import 'home_dashboard.dart';
@@ -20,8 +21,17 @@ class _AuthScreenState extends State<AuthScreen> {
   bool _isLoading       = false;
   bool _obscurePassword = true;
 
+  // Emergency data loaded from last logged-in user
+  Map<String, String>? _emergencyData;
+
   static const _blue      = Color(0xFF1565C0);
   static const _blueLight = Color(0xFF1E88E5);
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLastUserEmergencyData();
+  }
 
   @override
   void dispose() {
@@ -30,7 +40,42 @@ class _AuthScreenState extends State<AuthScreen> {
     super.dispose();
   }
 
-  // ── Sign In ──────────────────────────────────────────────────────────────────
+  // ── Load last logged-in user's emergency data ─────────────────────────────
+  Future<void> _loadLastUserEmergencyData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final uid = prefs.getString('last_user_uid');
+      if (uid == null) return;
+
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .get();
+
+      if (!doc.exists) return;
+      final data = doc.data()!;
+
+      if (!mounted) return;
+      setState(() {
+        _emergencyData = {
+          'name':                 data['name']                  ?? 'Unknown',
+          'age':                  data['age']                   ?? 'N/A',
+          'gender':               data['gender']                ?? 'N/A',
+          'bloodGroup':           data['bloodGroup']            ?? 'N/A',
+          'allergies':            data['allergies']             ?? '',
+          'conditions':           data['conditions']            ?? '',
+          'medications':          data['medications']           ?? '',
+          'surgeries':            data['surgeries']             ?? '',
+          'emergencyContactName': data['emergencyContactName']  ?? '',
+          'emergencyContactPhone':data['emergencyContactPhone'] ?? '',
+        };
+      });
+    } catch (_) {
+      // Silently fail — emergency button will just not show
+    }
+  }
+
+  // ── Sign In ───────────────────────────────────────────────────────────────
   Future<void> _signIn() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -39,7 +84,7 @@ class _AuthScreenState extends State<AuthScreen> {
     try {
       final userCredential = await FirebaseAuth.instance
           .signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
+        email:    _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
@@ -61,6 +106,10 @@ class _AuthScreenState extends State<AuthScreen> {
         return;
       }
 
+      // ── Save UID for emergency info on login screen ──────────────────────
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('last_user_uid', user.uid);
+
       final data = doc.data()!;
       setState(() => _isLoading = false);
 
@@ -69,15 +118,16 @@ class _AuthScreenState extends State<AuthScreen> {
         context,
         MaterialPageRoute(
           builder: (_) => HomeDashboard(
-            userName: data['name'] ?? 'User',
-            age: data['age'] ?? '—',
-            gender: data['gender'] ?? '—',
-            bloodGroup: data['bloodGroup'] ?? '—',
-            allergies: data['allergies'] ?? '',
-            conditions: data['conditions'] ?? '',
-            medications: data['medications'] ?? '',
-            surgeries: data['surgeries'] ?? '',
-            emergencyContactName: data['emergencyContactName'] ?? '',
+            userName:              data['name']                  ?? 'User',
+            userEmail:             user.email                    ?? '',
+            age:                   data['age']                   ?? '—',
+            gender:                data['gender']                ?? '—',
+            bloodGroup:            data['bloodGroup']            ?? '—',
+            allergies:             data['allergies']             ?? '',
+            conditions:            data['conditions']            ?? '',
+            medications:           data['medications']           ?? '',
+            surgeries:             data['surgeries']             ?? '',
+            emergencyContactName:  data['emergencyContactName']  ?? '',
             emergencyContactPhone: data['emergencyContactPhone'] ?? '',
           ),
         ),
@@ -95,7 +145,7 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
-  // ── Forgot Password ──────────────────────────────────────────────────────────
+  // ── Forgot Password ───────────────────────────────────────────────────────
   Future<void> _forgotPassword() async {
     final email = _emailController.text.trim();
     if (email.isEmpty) {
@@ -142,6 +192,28 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
+  // ── Open Emergency Info ───────────────────────────────────────────────────
+  void _openEmergencyInfo() {
+    final d = _emergencyData;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EmergencyInfoScreen(
+          name:                 d?['name']                  ?? 'Unknown',
+          age:                  d?['age']                   ?? 'N/A',
+          gender:               d?['gender']                ?? 'N/A',
+          bloodGroup:           d?['bloodGroup']            ?? 'N/A',
+          allergies:            d?['allergies']             ?? '',
+          conditions:           d?['conditions']            ?? '',
+          medications:          d?['medications']           ?? '',
+          surgeries:            d?['surgeries']             ?? '',
+          emergencyContactName: d?['emergencyContactName']  ?? '',
+          emergencyContactPhone:d?['emergencyContactPhone'] ?? '',
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -160,14 +232,11 @@ class _AuthScreenState extends State<AuthScreen> {
               key: _formKey,
               child: Column(
                 children: [
-                  // ── removed Spacer (not compatible with SingleChildScrollView)
-
                   const SizedBox(height: 40),
 
-                  // ── Logo ───────────────────────────────────────
+                  // ── Logo ──────────────────────────────────────────────────
                   Container(
-                    width: 90,
-                    height: 90,
+                    width: 90, height: 90,
                     decoration: BoxDecoration(
                       color: Colors.white,
                       shape: BoxShape.circle,
@@ -186,37 +255,25 @@ class _AuthScreenState extends State<AuthScreen> {
                           'assets/images/logo.png',
                           fit: BoxFit.contain,
                           errorBuilder: (context, error, stackTrace) =>
-                          const Icon(
-                            Icons.local_hospital,
-                            size: 48,
-                            color: _blue,
-                          ),
+                          const Icon(Icons.local_hospital,
+                              size: 48, color: _blue),
                         ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'MediVault',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.5,
-                    ),
-                  ),
+                  const Text('MediVault',
+                      style: TextStyle(
+                          color: Colors.white, fontSize: 30,
+                          fontWeight: FontWeight.bold, letterSpacing: 1.5)),
                   const SizedBox(height: 6),
-                  const Text(
-                    'Welcome back!',
-                    style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 15,
-                        letterSpacing: 0.3),
-                  ),
+                  const Text('Welcome back!',
+                      style: TextStyle(color: Colors.white70,
+                          fontSize: 15, letterSpacing: 0.3)),
 
                   const SizedBox(height: 36),
 
-                  // ── Sign In Card ───────────────────────────────
+                  // ── Sign In Card ──────────────────────────────────────────
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
@@ -233,23 +290,16 @@ class _AuthScreenState extends State<AuthScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Sign In',
-                          style: TextStyle(
-                            color: Color(0xFF1A1A2E),
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        const Text('Sign In',
+                            style: TextStyle(color: Color(0xFF1A1A2E),
+                                fontSize: 22, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 4),
-                        Text(
-                          'Enter your credentials to continue',
-                          style: TextStyle(
-                              color: Colors.grey.shade500, fontSize: 13),
-                        ),
+                        Text('Enter your credentials to continue',
+                            style: TextStyle(
+                                color: Colors.grey.shade500, fontSize: 13)),
                         const SizedBox(height: 24),
 
-                        // ── Email field ────────────────────────────
+                        // Email
                         _buildLabel('Email Address'),
                         const SizedBox(height: 8),
                         TextFormField(
@@ -261,22 +311,19 @@ class _AuthScreenState extends State<AuthScreen> {
                             if (v == null || v.trim().isEmpty) {
                               return 'Please enter your email';
                             }
-                            if (!RegExp(
-                                r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$')
+                            if (!RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$')
                                 .hasMatch(v.trim())) {
                               return 'Please enter a valid email';
                             }
                             return null;
                           },
                           decoration: _inputDecoration(
-                            hint: 'you@example.com',
-                            icon: Icons.email_outlined,
-                          ),
+                              hint: 'you@example.com',
+                              icon: Icons.email_outlined),
                         ),
-
                         const SizedBox(height: 18),
 
-                        // ── Password field ─────────────────────────
+                        // Password
                         _buildLabel('Password'),
                         const SizedBox(height: 8),
                         TextFormField(
@@ -302,31 +349,26 @@ class _AuthScreenState extends State<AuthScreen> {
                                 _obscurePassword
                                     ? Icons.visibility_off_outlined
                                     : Icons.visibility_outlined,
-                                color: Colors.grey.shade400,
-                                size: 20,
+                                color: Colors.grey.shade400, size: 20,
                               ),
-                              onPressed: () => setState(() =>
-                              _obscurePassword = !_obscurePassword),
+                              onPressed: () => setState(
+                                      () => _obscurePassword = !_obscurePassword),
                             ),
                           ),
                         ),
 
-                        // ── Forgot password ────────────────────────
+                        // Forgot password
                         Align(
                           alignment: Alignment.centerRight,
                           child: TextButton(
                             onPressed: _forgotPassword,
-                            child: const Text(
-                              'Forgot password?',
-                              style: TextStyle(
-                                  color: _blue,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600),
-                            ),
+                            child: const Text('Forgot password?',
+                                style: TextStyle(color: _blue,
+                                    fontSize: 13, fontWeight: FontWeight.w600)),
                           ),
                         ),
 
-                        // ── Sign In button ─────────────────────────
+                        // Sign In button
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
@@ -334,28 +376,20 @@ class _AuthScreenState extends State<AuthScreen> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: _blue,
                               foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 16),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
-                                  borderRadius:
-                                  BorderRadius.circular(14)),
+                                  borderRadius: BorderRadius.circular(14)),
                               elevation: 0,
                             ),
                             child: _isLoading
                                 ? const SizedBox(
-                              height: 22,
-                              width: 22,
-                              child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2.5),
-                            )
-                                : const Text(
-                              'Sign In',
-                              style: TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 0.5),
-                            ),
+                                height: 22, width: 22,
+                                child: CircularProgressIndicator(
+                                    color: Colors.white, strokeWidth: 2.5))
+                                : const Text('Sign In',
+                                style: TextStyle(fontSize: 17,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 0.5)),
                           ),
                         ),
                       ],
@@ -364,110 +398,79 @@ class _AuthScreenState extends State<AuthScreen> {
 
                   const SizedBox(height: 20),
 
-                  // ── Sign Up link ───────────────────────────────
+                  // ── Sign Up link ──────────────────────────────────────────
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
-                        "Don't have an account? ",
-                        style: TextStyle(
-                            color: Colors.white70, fontSize: 14),
-                      ),
-                      GestureDetector(
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const SignUpPage1()),
-                        ),
-                        child: const Text(
-                          'Sign Up',
+                      const Text("Don't have an account? ",
                           style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            decoration: TextDecoration.underline,
-                            decorationColor: Colors.white,
-                          ),
-                        ),
+                              color: Colors.white70, fontSize: 14)),
+                      GestureDetector(
+                        onTap: () => Navigator.push(context,
+                            MaterialPageRoute(
+                                builder: (_) => const SignUpPage1())),
+                        child: const Text('Sign Up',
+                            style: TextStyle(
+                                color: Colors.white, fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                decoration: TextDecoration.underline,
+                                decorationColor: Colors.white)),
                       ),
                     ],
                   ),
 
                   const SizedBox(height: 24),
 
-                  // ── Divider ────────────────────────────────────
+                  // ── Divider ───────────────────────────────────────────────
                   Row(
                     children: [
                       Expanded(
-                        child: Divider(
-                            color: Colors.white.withValues(alpha: 0.4),
-                            thickness: 1),
-                      ),
+                          child: Divider(
+                              color: Colors.white.withValues(alpha: 0.4),
+                              thickness: 1)),
                       Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12.0),
-                        child: Text(
-                          'or',
-                          style: TextStyle(
-                              color:
-                              Colors.white.withValues(alpha: 0.7),
-                              fontSize: 14),
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                        child: Text('or',
+                            style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.7),
+                                fontSize: 14)),
                       ),
                       Expanded(
-                        child: Divider(
-                            color: Colors.white.withValues(alpha: 0.4),
-                            thickness: 1),
-                      ),
+                          child: Divider(
+                              color: Colors.white.withValues(alpha: 0.4),
+                              thickness: 1)),
                     ],
                   ),
 
                   const SizedBox(height: 24),
 
-                  // ── Emergency Info Button ──────────────────────
+                  // ── Emergency Info Button ─────────────────────────────────
+                  // Only show if we have a previously logged-in user's data
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const EmergencyInfoScreen(
-                            name: 'Rahul Sharma',
-                            age: '25',
-                            gender: 'Male',
-                            bloodGroup: 'B+',
-                            allergies: 'Penicillin, Dust',
-                            conditions: 'Hypertension',
-                            medications: 'Amlodipine 5mg',
-                            surgeries: '',
-                            emergencyContactName: 'Suresh Sharma',
-                            emergencyContactPhone: '9123456789',
-                          ),
-                        ),
-                      ),
+                      onPressed: _openEmergencyInfo,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFD32F2F),
                         foregroundColor: Colors.white,
-                        padding:
-                        const EdgeInsets.symmetric(vertical: 16),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14)),
                         elevation: 4,
                       ),
                       icon: const Icon(Icons.emergency_rounded,
                           size: 22, color: Colors.white),
-                      label: const Text(
-                        'Emergency Info',
-                        style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.5),
-                      ),
+                      label: const Text('Emergency Info',
+                          style: TextStyle(fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5)),
                     ),
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'Access critical medical info without login',
+                    _emergencyData != null
+                        ? 'Showing emergency info for ${_emergencyData!['name']}'
+                        : 'Access critical medical info without login',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.6),
@@ -484,13 +487,9 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   Widget _buildLabel(String text) {
-    return Text(
-      text,
-      style: const TextStyle(
-          color: Color(0xFF1A1A2E),
-          fontSize: 14,
-          fontWeight: FontWeight.w600),
-    );
+    return Text(text,
+        style: const TextStyle(color: Color(0xFF1A1A2E),
+            fontSize: 14, fontWeight: FontWeight.w600));
   }
 
   InputDecoration _inputDecoration(
