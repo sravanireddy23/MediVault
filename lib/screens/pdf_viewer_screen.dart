@@ -37,6 +37,8 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       final fileName = 'medivault_${DateTime.now().millisecondsSinceEpoch}.pdf';
       final filePath = '${tempDir.path}/$fileName';
 
+      debugPrint('PDF URL: ${widget.url}'); // ← ADD THIS
+
       final dio = Dio();
       await dio.download(
         widget.url,
@@ -49,10 +51,11 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       );
       setState(() { _localPath = filePath; _isLoading = false; });
     } catch (e) {
+      debugPrint('PDF ERROR: $e'); // ← ADD THIS
       setState(() {
         _isLoading = false;
         _hasError  = true;
-        _errorMsg  = 'Failed to load PDF. Please check your connection.';
+        _errorMsg  = 'Error: $e'; // ← show real error temporarily
       });
     }
   }

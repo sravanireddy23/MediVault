@@ -204,18 +204,22 @@ class _HomeDashboardState extends State<HomeDashboard>
     }
   }
 
-  // ── Open article ──────────────────────────────────────────────────────────
+  // ── Open article — FIXED ──────────────────────────────────────────────────
   Future<void> _openArticle(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
+    try {
+      final uri = Uri.parse(url);
+      await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: const Text('Could not open article'),
           backgroundColor: Colors.red.shade400,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10)),
           margin: const EdgeInsets.all(12),
         ));
       }
@@ -274,12 +278,11 @@ class _HomeDashboardState extends State<HomeDashboard>
     ));
   }
 
-  // ── Settings — now passes userEmail ──────────────────────────────────────
   void _openSettings() {
     Navigator.push(context, MaterialPageRoute(
       builder: (_) => SettingsScreen(
         userName:  widget.userName,
-        userEmail: widget.userEmail,   // ← FIXED
+        userEmail: widget.userEmail,
       ),
     ));
   }

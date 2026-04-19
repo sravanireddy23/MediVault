@@ -34,6 +34,7 @@ Runner/GeneratedPluginRegistrant.*
 !default.perspectivev3
 
 # Your secret config
+lib/config/
 lib/config/aws_config.dart
 lib/config/news_config.dart
 lib/config/claude_config.dart

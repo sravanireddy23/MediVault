@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../config/claude_config.dart';
+import '../../config/groq_config.dart';
 
 // ── Message model ─────────────────────────────────────────────────────────────
 class ChatMessage {
@@ -51,7 +51,6 @@ const List<Map<String, dynamic>> _suggestedPrompts = [
 
 // ── Main Screen ───────────────────────────────────────────────────────────────
 class AiChatScreen extends StatefulWidget {
-  // ── NEW: optional preloaded record from AI Explain button ──────────────────
   final Map<String, dynamic>? preloadedRecord;
 
   const AiChatScreen({super.key, this.preloadedRecord});
@@ -71,8 +70,8 @@ class _AiChatScreenState extends State<AiChatScreen>
   final ScrollController _scrollController     = ScrollController();
   final FocusNode _focusNode                   = FocusNode();
 
-  final List<ChatMessage> _messages                    = [];
-  final List<Map<String, String>> _conversationHistory = [];
+  final List<ChatMessage> _messages                     = [];
+  final List<Map<String, dynamic>> _conversationHistory = [];
 
   bool _isTyping = false;
   Map<String, dynamic>? _userProfile;
@@ -110,7 +109,6 @@ class _AiChatScreenState extends State<AiChatScreen>
       }
     } catch (_) {}
 
-    // ── NEW: after profile loads, auto-send if opened from AI Explain ────────
     if (widget.preloadedRecord != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _autoSendRecordPrompt(widget.preloadedRecord!);
@@ -118,21 +116,36 @@ class _AiChatScreenState extends State<AiChatScreen>
     }
   }
 
-  // ── NEW: build and auto-send the AI Explain prompt ────────────────────────
+  // ── Auto-send record prompt — includes OCR text if available ─────────────
   void _autoSendRecordPrompt(Map<String, dynamic> record) {
-    final title   = record['title']      ?? 'this medical report';
-    final dept    = record['department'] ?? '';
-    final doctor  = record['doctor']     ?? '';
-    final hospital = record['hospital']  ?? '';
+    final title         = record['title']         ?? 'this medical report';
+    final dept          = record['department']    ?? '';
+    final doctor        = record['doctor']        ?? '';
+    final hospital      = record['hospital']      ?? '';
+    final extractedText = record['extractedText'] as String? ?? '';
 
     final prompt = StringBuffer('Please explain my medical report: "$title"');
     if (dept.isNotEmpty)     prompt.write(' from the $dept department');
     if (doctor.isNotEmpty)   prompt.write(', ordered by $doctor');
     if (hospital.isNotEmpty) prompt.write(' at $hospital');
-    prompt.write(
-      '. What does it mean, what are the key things I should know, '
-          'and are there any important values I should discuss with my doctor?',
-    );
+
+    if (extractedText.trim().isNotEmpty) {
+      // ── Has OCR text → accurate explanation based on actual document ──
+      prompt.write(
+        '.\n\nHere is the actual text extracted from the document:\n"""\n'
+            '$extractedText\n"""\n\n'
+            'Please explain this document in simple language. '
+            'List all medicines, dosages, and instructions clearly. '
+            'What are the key things I should know, '
+            'and are there any important values I should discuss with my doctor?',
+      );
+    } else {
+      // ── No OCR text → general explanation based on title only ──
+      prompt.write(
+        '. What does it mean, what are the key things I should know, '
+            'and are there any important values I should discuss with my doctor?',
+      );
+    }
 
     _sendMessage(prompt.toString());
   }
@@ -159,7 +172,7 @@ Patient Profile:
 - Gender: $gender
 - Blood Group: $bloodGroup${allergies != null && allergies.isNotEmpty ? '\n- Allergies: $allergies' : ''}${conditions != null && conditions.isNotEmpty ? '\n- Known Conditions: $conditions' : ''}${medications != null && medications.isNotEmpty ? '\n- Current Medications: $medications' : ''}${surgeries != null && surgeries.isNotEmpty ? '\n- Past Surgeries: $surgeries' : ''}
 
-Always personalise your responses using this profile. For example, flag drug interactions with their known allergies or medications, and tailor advice to their age, gender, and conditions.''';
+Always personalise your responses using this profile. Flag drug interactions with their known allergies or medications, and tailor advice to their age, gender, and conditions.''';
     }
 
     return '''You are MediVault AI, a compassionate and knowledgeable personal health assistant embedded in the MediVault app — a secure platform for storing and managing lifelong medical records.
@@ -181,7 +194,7 @@ Important guidelines:
 - You are NOT a replacement for professional medical advice.''';
   }
 
-  // ── Send message ──────────────────────────────────────────────────────────
+  // ── Send message — Groq API ───────────────────────────────────────────────
   Future<void> _sendMessage(String text) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty || _isTyping) return;
@@ -195,46 +208,58 @@ Important guidelines:
       _isTyping = true;
     });
 
-    _conversationHistory.add({'role': 'user', 'content': trimmed});
+    _conversationHistory.add({
+      'role': 'user',
+      'content': trimmed,
+    });
+
     _scrollToBottom();
 
     try {
       final response = await http.post(
-        Uri.parse(ClaudeConfig.apiUrl),
+        Uri.parse(GroqConfig.apiUrl),
         headers: {
-          'Content-Type':      'application/json',
-          'x-api-key':         ClaudeConfig.apiKey,
-          'anthropic-version': '2023-06-01',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${GroqConfig.apiKey}',
         },
         body: jsonEncode({
-          'model':      ClaudeConfig.model,
+          'model': GroqConfig.model,
+          'messages': [
+            {'role': 'system', 'content': _buildSystemPrompt()},
+            ..._conversationHistory,
+          ],
           'max_tokens': 1024,
-          'system':     _buildSystemPrompt(),
-          'messages':   _conversationHistory,
+          'temperature': 0.7,
         }),
       ).timeout(const Duration(seconds: 30));
 
+      debugPrint('GROQ STATUS: ${response.statusCode}');
+      debugPrint('GROQ BODY: ${response.body}');
+
       if (response.statusCode == 200) {
-        final data    = jsonDecode(response.body) as Map<String, dynamic>;
-        final content = data['content'] as List<dynamic>;
-        final reply   = content
-            .where((b) => b['type'] == 'text')
-            .map((b) => b['text'] as String)
-            .join('\n')
+        final data  = jsonDecode(response.body) as Map<String, dynamic>;
+        final reply = data['choices'][0]['message']['content']
+            .toString()
             .trim();
 
-        _conversationHistory.add({'role': 'assistant', 'content': reply});
+        _conversationHistory.add({
+          'role': 'assistant',
+          'content': reply,
+        });
+
         setState(() {
           _isTyping = false;
           _messages.add(ChatMessage(
               text: reply, isUser: false, timestamp: DateTime.now()));
         });
       } else {
+        debugPrint('GROQ ERROR STATUS: ${response.statusCode}');
+        debugPrint('GROQ ERROR BODY: ${response.body}');
         _handleApiError('Sorry, I could not get a response. Please try again.');
       }
-    } catch (_) {
-      _handleApiError(
-          'Connection error. Please check your internet and try again.');
+    } catch (e) {
+      debugPrint('GROQ EXCEPTION: $e');
+      _handleApiError('Connection error. Please check your internet and try again.');
     }
 
     _scrollToBottom();
@@ -293,10 +318,9 @@ Important guidelines:
 
   // ── App Bar ───────────────────────────────────────────────────────────────
   PreferredSizeWidget _buildAppBar() {
-    // ── NEW: show record title in subtitle if opened from AI Explain ─────────
     final subtitle = widget.preloadedRecord != null
         ? 'Explaining: ${widget.preloadedRecord!['title'] ?? 'Report'}'
-        : 'Powered by Claude';
+        : 'Powered by Groq';
 
     return AppBar(
       backgroundColor: _blue,

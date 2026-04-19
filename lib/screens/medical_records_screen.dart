@@ -29,7 +29,6 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
 
-  // ── Filter state ──────────────────────────────────────────────────────────
   String? _filterType;
   String? _filterDept;
   String? _filterYear;
@@ -92,7 +91,6 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
     super.dispose();
   }
 
-  // ── Date helpers ──────────────────────────────────────────────────────────
   static const List<String> _months = [
     '', 'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
@@ -104,8 +102,6 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
 
   String _monthYear(DateTime dt) => '${_months[dt.month]} ${dt.year}';
   String _shortDate(DateTime dt)  => '${_shortMonths[dt.month]} ${dt.day}, ${dt.year}';
-  String _isoDate(DateTime dt)    =>
-      '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
 
   DateTime _parseDate(dynamic ts, dynamic fallback) {
     if (ts is Timestamp) return ts.toDate();
@@ -115,7 +111,6 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
     return DateTime.now();
   }
 
-  // ── Firestore ─────────────────────────────────────────────────────────────
   Future<void> _loadRecords() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
@@ -139,7 +134,6 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
     }
   }
 
-  // ── Filter helpers ────────────────────────────────────────────────────────
   bool get _hasActiveFilters =>
       _filterType != null || _filterDept != null || _filterYear != null;
 
@@ -216,7 +210,6 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
     _applyFilters();
   }
 
-  // ── Filter sheet ──────────────────────────────────────────────────────────
   void _showFilterSheet() {
     String? tempType = _filterType;
     String? tempDept = _filterDept;
@@ -257,10 +250,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
                       const Icon(Icons.tune_rounded, color: kPrimaryBlue, size: 20),
                       const SizedBox(width: 8),
                       const Text('Filter Records',
-                          style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.bold,
-                              color: kDarkText)),
+                          style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: kDarkText)),
                       const Spacer(),
                       if (tempType != null || tempDept != null || tempYear != null)
                         GestureDetector(
@@ -270,10 +260,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
                             tempYear = null;
                           }),
                           child: const Text('Clear all',
-                              style: TextStyle(
-                                  color: kEmergencyRed,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600)),
+                              style: TextStyle(color: kEmergencyRed, fontSize: 13, fontWeight: FontWeight.w600)),
                         ),
                     ],
                   ),
@@ -289,23 +276,18 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
                           onTap: () => setSheetState(() =>
                           tempType = tempType == type ? null : type),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 9),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
                             decoration: BoxDecoration(
                               color: isSelected ? kPrimaryBlue : const Color(0xFFF5F8FF),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: isSelected
-                                    ? kPrimaryBlue
-                                    : Colors.grey.withValues(alpha: 0.3),
+                                color: isSelected ? kPrimaryBlue : Colors.grey.withValues(alpha: 0.3),
                               ),
                             ),
                             child: Row(
                               children: [
                                 Icon(
-                                  type == 'Doctor Visit'
-                                      ? Icons.local_hospital_rounded
-                                      : Icons.upload_file_rounded,
+                                  type == 'Doctor Visit' ? Icons.local_hospital_rounded : Icons.upload_file_rounded,
                                   size: 14,
                                   color: isSelected ? Colors.white : Colors.grey[600],
                                 ),
@@ -335,15 +317,12 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
                           onTap: () => setSheetState(() =>
                           tempDept = tempDept == dept ? null : dept),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 8),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                             decoration: BoxDecoration(
                               color: isSelected ? color : color.withValues(alpha: 0.08),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: isSelected
-                                    ? color
-                                    : color.withValues(alpha: 0.3),
+                                color: isSelected ? color : color.withValues(alpha: 0.3),
                               ),
                             ),
                             child: Text(dept,
@@ -368,15 +347,12 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
                           onTap: () => setSheetState(() =>
                           tempYear = tempYear == year ? null : year),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 9),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
                             decoration: BoxDecoration(
                               color: isSelected ? kPrimaryBlue : const Color(0xFFF5F8FF),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: isSelected
-                                    ? kPrimaryBlue
-                                    : Colors.grey.withValues(alpha: 0.3),
+                                color: isSelected ? kPrimaryBlue : Colors.grey.withValues(alpha: 0.3),
                               ),
                             ),
                             child: Text(year,
@@ -406,13 +382,11 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
                         backgroundColor: kPrimaryBlue,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         elevation: 0,
                       ),
                       child: const Text('Apply Filters',
-                          style: TextStyle(
-                              fontSize: 15, fontWeight: FontWeight.bold)),
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],
@@ -433,7 +407,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
             letterSpacing: 1.0));
   }
 
-  // ── Grouping ──────────────────────────────────────────────────────────────
+  // ── KEY FIX: Group by doctor+hospital so all records under same doctor merge ──
   Map<String, List<Map<String, dynamic>>> _groupByMonth() {
     final Map<String, List<Map<String, dynamic>>> map = {};
     for (final r in _filteredRecords) {
@@ -448,22 +422,30 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
     final List<Map<String, dynamic>> directUploads = [];
 
     for (final r in records) {
-      final uploadType = r['uploadType'] ?? '';
-      final episodeId  = r['episodeId']  ?? '';
-      if (uploadType == 'new_visit') {
-        final dt  = _parseDate(r['uploadedAt'], r['date']);
-        final key = '${r['doctor']}_${r['hospital']}_${_isoDate(dt)}';
+      final uploadType = (r['uploadType'] ?? '').toString();
+      final doctor     = (r['doctor']     ?? '').toString().trim();
+      final hospital   = (r['hospital']   ?? '').toString().trim();
+
+      if ((uploadType == 'new_visit' || uploadType == 'existing_visit') &&
+          doctor.isNotEmpty) {
+        // ── FIX: group ALL doctor records by doctor+hospital key ──
+        final key = '${doctor.toLowerCase()}_${hospital.toLowerCase()}';
         episodeMap.putIfAbsent(key, () => []).add(r);
-      } else if (uploadType == 'existing_visit' && episodeId.isNotEmpty) {
-        episodeMap.putIfAbsent(episodeId, () => []).add(r);
       } else {
         directUploads.add(r);
       }
     }
 
     final List<_RecordGroup> groups = [];
+
     for (final entry in episodeMap.entries) {
       final files = entry.value;
+      // Sort files within episode newest first
+      files.sort((a, b) {
+        final da = _parseDate(a['uploadedAt'], a['date']);
+        final db = _parseDate(b['uploadedAt'], b['date']);
+        return db.compareTo(da);
+      });
       final first = files.first;
       groups.add(_RecordGroup(
         isEpisode:  true,
@@ -489,7 +471,6 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
     return groups;
   }
 
-  // ── Badge helpers ─────────────────────────────────────────────────────────
   bool _isPdf(Map<String, dynamic> r) {
     final name = (r['fileName'] ?? r['title'] ?? '').toString().toLowerCase();
     final url  = (r['fileUrl']  ?? '').toString().toLowerCase();
@@ -511,7 +492,6 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
     }
   }
 
-  // ── Navigation ────────────────────────────────────────────────────────────
   void _openRecord(Map<String, dynamic> record) {
     if (_isPdf(record)) {
       Navigator.push(context, MaterialPageRoute(
@@ -540,7 +520,6 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
     );
   }
 
-  // ── Three-dot menu ────────────────────────────────────────────────────────
   void _showOptionsSheet(Map<String, dynamic> record) {
     HapticFeedback.lightImpact();
     showModalBottomSheet(
@@ -559,7 +538,6 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
     );
   }
 
-  // ── Delete ────────────────────────────────────────────────────────────────
   Future<void> _confirmDelete(Map<String, dynamic> record) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -567,8 +545,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Row(
           children: [
-            Icon(Icons.warning_amber_rounded,
-                color: Color(0xFFD32F2F), size: 22),
+            Icon(Icons.warning_amber_rounded, color: Color(0xFFD32F2F), size: 22),
             SizedBox(width: 8),
             Text('Delete Record',
                 style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
@@ -580,8 +557,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
           children: [
             Text(
               '"${record['title'] ?? 'this record'}"',
-              style: const TextStyle(
-                  fontWeight: FontWeight.w600, color: kDarkText),
+              style: const TextStyle(fontWeight: FontWeight.w600, color: kDarkText),
             ),
             const SizedBox(height: 8),
             Text(
@@ -593,16 +569,14 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('Cancel',
-                style: TextStyle(color: Colors.grey[600])),
+            child: Text('Cancel', style: TextStyle(color: Colors.grey[600])),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
               backgroundColor: kEmergencyRed,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               elevation: 0,
             ),
             child: const Text('Delete'),
@@ -613,7 +587,6 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
 
     if (confirm != true) return;
 
-    // Show deleting indicator
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -638,13 +611,11 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid == null) return;
 
-      // 1. Delete from S3
       final fileUrl = record['fileUrl'] ?? '';
       if (fileUrl.isNotEmpty) {
         await S3Service.deleteFile(fileUrl: fileUrl);
       }
 
-      // 2. Delete from Firestore
       await FirebaseFirestore.instance
           .collection('users').doc(uid)
           .collection('records').doc(record['id'])
@@ -673,7 +644,6 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
     }
   }
 
-  // ── Build ─────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     final monthGroups = _groupByMonth();
@@ -684,8 +654,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
           _buildHeader(_allRecords.length),
           Expanded(
             child: _loading
-                ? const Center(
-                child: CircularProgressIndicator(color: kPrimaryBlue))
+                ? const Center(child: CircularProgressIndicator(color: kPrimaryBlue))
                 : _filteredRecords.isEmpty
                 ? _buildEmptyState()
                 : _buildTimeline(monthGroups),
@@ -704,7 +673,6 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
     );
   }
 
-  // ── Header ────────────────────────────────────────────────────────────────
   Widget _buildHeader(int total) {
     return Container(
       decoration: const BoxDecoration(
@@ -737,24 +705,20 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold)),
                         Text('Timeline · Newest first',
-                            style: TextStyle(
-                                color: Colors.white70, fontSize: 13)),
+                            style: TextStyle(color: Colors.white70, fontSize: 13)),
                       ],
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.38)),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.38)),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.folder_copy_outlined,
-                            color: Colors.white, size: 16),
+                        const Icon(Icons.folder_copy_outlined, color: Colors.white, size: 16),
                         const SizedBox(width: 6),
                         Text('$total Records',
                             style: const TextStyle(
@@ -787,10 +751,8 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
                   style: const TextStyle(fontSize: 15, color: kDarkText),
                   decoration: InputDecoration(
                     hintText: 'Search records, doctors...',
-                    hintStyle:
-                    TextStyle(color: Colors.grey[400], fontSize: 15),
-                    prefixIcon: Icon(Icons.search,
-                        color: kPrimaryBlue.withValues(alpha: 0.7)),
+                    hintStyle: TextStyle(color: Colors.grey[400], fontSize: 15),
+                    prefixIcon: Icon(Icons.search, color: kPrimaryBlue.withValues(alpha: 0.7)),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
                         icon: const Icon(Icons.clear, size: 18),
@@ -800,8 +762,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
                         })
                         : null,
                     border: InputBorder.none,
-                    contentPadding:
-                    const EdgeInsets.symmetric(vertical: 14),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                 ),
               ),
@@ -812,9 +773,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
     );
   }
 
-  // ── Timeline ──────────────────────────────────────────────────────────────
-  Widget _buildTimeline(
-      Map<String, List<Map<String, dynamic>>> monthGroups) {
+  Widget _buildTimeline(Map<String, List<Map<String, dynamic>>> monthGroups) {
     return RefreshIndicator(
       color: kPrimaryBlue,
       onRefresh: _loadRecords,
@@ -850,30 +809,22 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: _hasActiveFilters
-                    ? const Color(0xFFE3F2FD)
-                    : Colors.white,
+                color: _hasActiveFilters ? const Color(0xFFE3F2FD) : Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: _hasActiveFilters
-                      ? kPrimaryBlue
-                      : Colors.grey[300]!,
+                  color: _hasActiveFilters ? kPrimaryBlue : Colors.grey[300]!,
                 ),
               ),
               child: Row(
                 children: [
                   Icon(Icons.tune,
                       size: 15,
-                      color: _hasActiveFilters
-                          ? kPrimaryBlue
-                          : Colors.grey[600]),
+                      color: _hasActiveFilters ? kPrimaryBlue : Colors.grey[600]),
                   const SizedBox(width: 4),
                   Text('Filter',
                       style: TextStyle(
                           fontSize: 13,
-                          color: _hasActiveFilters
-                              ? kPrimaryBlue
-                              : Colors.grey[700],
+                          color: _hasActiveFilters ? kPrimaryBlue : Colors.grey[700],
                           fontWeight: FontWeight.w600)),
                   if (_hasActiveFilters) ...[
                     const SizedBox(width: 4),
@@ -927,8 +878,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
               decoration: BoxDecoration(
                 color: kEmergencyRed.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                    color: kEmergencyRed.withValues(alpha: 0.3)),
+                border: Border.all(color: kEmergencyRed.withValues(alpha: 0.3)),
               ),
               child: const Text('Clear all',
                   style: TextStyle(
@@ -961,8 +911,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
           const SizedBox(width: 4),
           GestureDetector(
             onTap: onRemove,
-            child: const Icon(Icons.close_rounded,
-                size: 14, color: kPrimaryBlue),
+            child: const Icon(Icons.close_rounded, size: 14, color: kPrimaryBlue),
           ),
         ],
       ),
@@ -1015,8 +964,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
     );
   }
 
-  Widget _buildEpisodeHeader(
-      _RecordGroup group, Color deptColor, IconData deptIcon) {
+  Widget _buildEpisodeHeader(_RecordGroup group, Color deptColor, IconData deptIcon) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
       child: Row(
@@ -1044,8 +992,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
                                 color: kDarkText))),
                     Text(
                         '${group.files.length} file${group.files.length == 1 ? '' : 's'}',
-                        style: TextStyle(
-                            fontSize: 12, color: Colors.grey[500])),
+                        style: TextStyle(fontSize: 12, color: Colors.grey[500])),
                   ],
                 ),
                 const SizedBox(height: 2),
@@ -1053,8 +1000,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
                     style: TextStyle(fontSize: 12, color: Colors.grey[500])),
                 const SizedBox(height: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 3),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                   decoration: BoxDecoration(
                       color: deptColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20)),
@@ -1082,8 +1028,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
             decoration: BoxDecoration(
                 color: const Color(0xFFFF6F00).withValues(alpha: 0.12),
                 shape: BoxShape.circle),
-            child: const Icon(Icons.upload_file,
-                color: Color(0xFFFF6F00), size: 22),
+            child: const Icon(Icons.upload_file, color: Color(0xFFFF6F00), size: 22),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1100,16 +1045,14 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
                                 fontSize: 15,
                                 color: kDarkText))),
                     Text('1 file',
-                        style: TextStyle(
-                            fontSize: 12, color: Colors.grey[500])),
+                        style: TextStyle(fontSize: 12, color: Colors.grey[500])),
                   ],
                 ),
                 const SizedBox(height: 4),
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
                           color: const Color(0xFFFF6F00).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4)),
@@ -1121,8 +1064,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
                     ),
                     const SizedBox(width: 6),
                     Text(_shortDate(group.date),
-                        style: TextStyle(
-                            fontSize: 11, color: Colors.grey[500])),
+                        style: TextStyle(fontSize: 11, color: Colors.grey[500])),
                   ],
                 ),
               ],
@@ -1133,7 +1075,6 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
     );
   }
 
-  // ── File row — tap opens record, three-dot opens options ──────────────────
   Widget _buildFileRow(Map<String, dynamic> record, bool isLast) {
     final badge      = _badgeLabel(record);
     final badgeColor = _badgeColor(badge);
@@ -1141,19 +1082,16 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
       onTap: () => _openRecord(record),
       child: Container(
         decoration: BoxDecoration(
-            border: Border(
-                top: BorderSide(color: Colors.grey[100]!, width: 1))),
+            border: Border(top: BorderSide(color: Colors.grey[100]!, width: 1))),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            // Badge
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                   color: badgeColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(
-                      color: badgeColor.withValues(alpha: 0.4))),
+                  border: Border.all(color: badgeColor.withValues(alpha: 0.4))),
               child: Text(badge,
                   style: TextStyle(
                       color: badgeColor,
@@ -1162,8 +1100,6 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
                       letterSpacing: 0.5)),
             ),
             const SizedBox(width: 12),
-
-            // Title
             Expanded(
               child: Text(record['title'] ?? 'Report',
                   style: const TextStyle(
@@ -1173,8 +1109,6 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis),
             ),
-
-            // ── Three-dot menu button ─────────────────────────────────────
             GestureDetector(
               onTap: () => _showOptionsSheet(record),
               child: Container(
@@ -1183,8 +1117,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
                   color: const Color(0xFFF5F8FF),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(Icons.more_vert_rounded,
-                    size: 18, color: Colors.grey[600]),
+                child: Icon(Icons.more_vert_rounded, size: 18, color: Colors.grey[600]),
               ),
             ),
           ],
@@ -1198,8 +1131,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.folder_open_outlined,
-              size: 72, color: Colors.grey[300]),
+          Icon(Icons.folder_open_outlined, size: 72, color: Colors.grey[300]),
           const SizedBox(height: 16),
           Text(
               _searchQuery.isEmpty && !_hasActiveFilters
@@ -1246,7 +1178,7 @@ class _RecordGroup {
   });
 }
 
-// ── Options bottom sheet (⋮ menu) ─────────────────────────────────────────────
+// ── Options bottom sheet ──────────────────────────────────────────────────────
 class _OptionsSheet extends StatelessWidget {
   final Map<String, dynamic> record;
   final bool isPdf;
@@ -1268,15 +1200,12 @@ class _OptionsSheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Handle
           Container(
               width: 40, height: 4,
               margin: const EdgeInsets.only(bottom: 16),
               decoration: BoxDecoration(
                   color: Colors.grey[300],
                   borderRadius: BorderRadius.circular(2))),
-
-          // Record name
           Padding(
             padding: const EdgeInsets.only(bottom: 4),
             child: Text(
@@ -1296,15 +1225,10 @@ class _OptionsSheet extends StatelessWidget {
               style: TextStyle(fontSize: 12, color: Colors.grey[500]),
             ),
           ),
-
           const Divider(height: 1),
           const SizedBox(height: 8),
-
-          // ── Options ───────────────────────────────────────────────────────
           _tile(
-            icon: isPdf
-                ? Icons.picture_as_pdf_outlined
-                : Icons.image_outlined,
+            icon: isPdf ? Icons.picture_as_pdf_outlined : Icons.image_outlined,
             label: 'View ${isPdf ? 'PDF' : 'Image'}',
             color: const Color(0xFF1565C0),
             onTap: onView,
