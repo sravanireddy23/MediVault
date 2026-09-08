@@ -852,15 +852,35 @@ If a specific open-source license is added to the repository, replace this secti
 
 ---
 
-# 👩‍💻 Authors
+## 👩‍💻 Authors
 
-**MediVault Development Team**
+### MediVault Team
 
-Developed as a project focused on combining:
+| Team Member                 | GitHub                                                 |
+| --------------------------- | ------------------------------------------------------ |
+| **  ## 👩‍💻 Authors
 
-**Mobile Development + Cloud Computing + OCR + Artificial Intelligence + Healthcare**
+### MediVault Team
 
----
+| Team Member                 | GitHub                                                 |
+| --------------------------- | ------------------------------------------------------ |
+| **Gavinolla Sravani Reddy** | [@sravanireddy23](https://github.com/sravanireddy23)   |
+| **Medidi Satya Srivalli**   | [@github-username](https://github.com/srivalli161410)  |
+| **Yedugani Likhithaa**      | [@github-username](https://github.com/likhithaa62516)  |
+
+
+<p align="center">
+  <b>Built with ❤️ by the MediVault Team</b>
+</p>
+** | [@sravanireddy23](https://github.com/sravanireddy23)   |
+| **Team Member 2**           | [@github-username](https://github.com/github-username) |
+| **Team Member 3**           | [@github-username](https://github.com/github-username) |
+
+
+<p align="center">
+  <b>Built with ❤️ by the MediVault Team</b>
+</p>
+
 
 <p align="center">
 
