@@ -1,7 +1,7 @@
 # 🏥 MediVault — Your Lifelong Medical Record
 
 <p align="center">
-  <img src="assets/logo.png" alt="MediVault Logo" width="140"/>
+  <img src="assets/images/logo.png" alt="MediVault Logo" width="140"/>
 </p>
 
 <h3 align="center">
